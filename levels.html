@@ -293,7 +293,7 @@
             <a href="game.html">Play</a>
             <a href="levels.html" class="active">Levels</a>
             <a href="testing.html">Testing</a>
-            <a href="admin-levels.html">Admin</a>
+            <a href="admin-levels.html">🔒 Admin</a>
         </nav>
     </header>
 
@@ -355,14 +355,8 @@
                 const saved = localStorage.getItem('robotGameLevels');
                 if (saved) {
                     const allLevels = JSON.parse(saved);
-                    // Only return published levels for players
-                    const publishedLevels = {};
-                    Object.values(allLevels).forEach(level => {
-                        if (level.published) {
-                            publishedLevels[level.id] = level;
-                        }
-                    });
-                    return publishedLevels;
+                    // Return all levels for now (no published flag in new admin panel)
+                    return allLevels;
                 }
                 return {};
             }
@@ -370,6 +364,43 @@
             loadPlayerProgress() {
                 const saved = localStorage.getItem('playerProgress');
                 return saved ? JSON.parse(saved) : {};
+            }
+
+            savePlayerProgress() {
+                localStorage.setItem('playerProgress', JSON.stringify(this.playerProgress));
+                this.updatePlayerStats();
+                this.renderLevelList();
+            }
+
+            // Method to be called from testing.html when a level is completed
+            recordLevelCompletion(levelId, commandCount) {
+                if (!this.playerProgress[levelId]) {
+                    this.playerProgress[levelId] = {
+                        completed: false,
+                        bestScore: null,
+                        attempts: 0
+                    };
+                }
+
+                this.playerProgress[levelId].attempts++;
+                this.playerProgress[levelId].completed = true;
+
+                // Update best score if this is better
+                if (this.playerProgress[levelId].bestScore === null || 
+                    commandCount < this.playerProgress[levelId].bestScore) {
+                    this.playerProgress[levelId].bestScore = commandCount;
+                }
+
+                this.savePlayerProgress();
+                
+                // Show completion message
+                const level = this.levels[levelId];
+                const earnedStar = commandCount <= level.par;
+                const message = earnedStar ? 
+                    `🎉 Congratulations! You completed "${level.name}" in ${commandCount} commands and earned a ⭐ star!` :
+                    `🎉 Congratulations! You completed "${level.name}" in ${commandCount} commands!`;
+                
+                alert(message);
             }
 
             updatePlayerStats() {
@@ -423,7 +454,7 @@
                         <div class="level-info">
                             <div class="level-name">${level.name}</div>
                             <div class="level-details">
-                                ${level.difficulty} • Par: ${level.par}${bestScoreText}
+                                Order: ${level.order} • Par: ${level.par}${bestScoreText}
                             </div>
                         </div>
                         <div class="level-status">
@@ -466,8 +497,8 @@
                                 <div class="stat-label">Par Score</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-value">${this.currentLevel.difficulty}</div>
-                                <div class="stat-label">Difficulty</div>
+                                <div class="stat-value">${this.currentLevel.order}</div>
+                                <div class="stat-label">Level Order</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-value">${progress ? progress.bestScore || '--' : '--'}</div>
@@ -616,8 +647,13 @@
         }
 
         // Initialize the player level viewer when the page loads
+        let playerLevelViewer;
         document.addEventListener('DOMContentLoaded', () => {
-            new PlayerLevelViewer();
+            playerLevelViewer = new PlayerLevelViewer();
+            // Expose globally for testing.html to call
+            window.recordLevelCompletion = (levelId, commandCount) => {
+                playerLevelViewer.recordLevelCompletion(levelId, commandCount);
+            };
         });
     </script>
 </body>

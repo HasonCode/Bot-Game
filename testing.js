@@ -501,6 +501,11 @@ else:
             // Update level in level editor
             this.updateLevelInEditor(commandsUsed);
             
+            // Call the global progress tracking function if it exists
+            if (typeof window.recordLevelCompletion === 'function') {
+                window.recordLevelCompletion(this.currentLevel, commandsUsed);
+            }
+            
             if (commandsUsed <= levelDef.par) {
                 this.logOutput(`🎉 Level completed in ${commandsUsed} commands! ⭐ STAR! (Par: ${levelDef.par})`, 'success');
             } else {
