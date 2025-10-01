@@ -424,7 +424,7 @@
                 this.levelList.innerHTML = '';
                 
                 // Sort levels by order
-                const sortedLevels = Object.values(this.levels).sort((a, b) => (a.order || 0) - (b.order || 0));
+                const sortedLevels = this.levels.sort((a, b) => (a.order || 0) - (b.order || 0));
                 
                 sortedLevels.forEach(level => {
                     const progress = this.playerProgress[level.id];
@@ -474,7 +474,7 @@
                 document.querySelector(`[data-level-id="${levelId}"]`).classList.add('active');
                 
                 this.currentLevelId = levelId;
-                this.currentLevel = this.levels[levelId];
+                this.currentLevel = this.levels.find(level => level.id == levelId);
                 this.renderLevelDetails();
             }
 
@@ -572,7 +572,7 @@
                 
                 const ctx = canvas.getContext('2d');
                 const cellSize = 20;
-                const boardData = this.parseBoardCSV(this.currentLevel.boardData);
+                const boardData = this.levelManager.parseGridCSV(this.currentLevel.gridData);
                 
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -580,12 +580,12 @@
                 // Draw grid
                 for (let y = 0; y < boardData.gridSize; y++) {
                     for (let x = 0; x < boardData.gridSize; x++) {
-                        const cell = boardData.board[y][x];
+                        const cell = boardData.board[y] && boardData.board[y][x];
                         const pixelX = x * cellSize;
                         const pixelY = y * cellSize;
                         
                         // Draw cell background
-                        ctx.fillStyle = this.getCellColor(cell.type);
+                        ctx.fillStyle = cell ? this.getCellColor(cell.type) : '#F0F8FF';
                         ctx.fillRect(pixelX, pixelY, cellSize, cellSize);
                         
                         // Draw cell border
@@ -594,41 +594,15 @@
                         ctx.strokeRect(pixelX, pixelY, cellSize, cellSize);
                         
                         // Draw special elements
-                        if (cell.type === 'key') {
+                        if (cell && cell.type === 'key') {
                             ctx.fillStyle = '#FFD700';
                             ctx.fillRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
-                        } else if (cell.type === 'ending') {
+                        } else if (cell && cell.type === 'ending') {
                             ctx.fillStyle = '#FF6B6B';
                             ctx.fillRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
                         }
                     }
                 }
-            }
-
-            parseBoardCSV(csvData) {
-                const lines = csvData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-                const board = [];
-                const gates = [];
-                const keys = [];
-                let gridSize = 0;
-                
-                lines.forEach(line => {
-                    const [x, y, type, color] = line.split(',').map(s => s.trim());
-                    if (type && type !== 'gate' && type !== 'key') {
-                        const xNum = parseInt(x);
-                        const yNum = parseInt(y);
-                        gridSize = Math.max(gridSize, xNum + 1, yNum + 1);
-                        
-                        if (!board[yNum]) board[yNum] = [];
-                        board[yNum][xNum] = { type, color };
-                    } else if (type === 'key') {
-                        keys.push({ x: parseInt(x), y: parseInt(y), color });
-                    } else if (type === 'gate') {
-                        gates.push({ x: parseInt(x), y: parseInt(y), color });
-                    }
-                });
-                
-                return { board, gates, keys, gridSize };
             }
 
             getCellColor(type) {

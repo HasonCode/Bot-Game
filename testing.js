@@ -29,7 +29,9 @@ class RobotTester {
         // Level tracking
         this.currentLevel = null;
         this.levelCompletion = JSON.parse(localStorage.getItem('levelCompletion') || '{}');
-        this.levels = this.loadLevelsFromEditor();
+        
+        // Initialize level manager
+        this.levelManager = window.LevelManager || new LevelManager();
         
         // Board data
         this.board = [];
@@ -67,12 +69,12 @@ class RobotTester {
             this.levelSelect.removeChild(this.levelSelect.lastChild);
         }
         
-        // Add levels from editor
-        const levels = this.loadLevelsFromEditor();
-        Object.values(levels).forEach(level => {
+        // Add levels from level manager
+        const levels = this.levelManager.getAllLevels();
+        levels.forEach(level => {
             const option = document.createElement('option');
             option.value = level.id;
-            option.textContent = level.name;
+            option.textContent = `${level.name} (Order: ${level.order})`;
             this.levelSelect.appendChild(option);
         });
     }
@@ -86,30 +88,14 @@ class RobotTester {
         }
     }
 
-    // Load levels from level editor
-    loadLevelsFromEditor() {
-        const saved = localStorage.getItem('robotGameLevels');
-        if (saved) {
-            return JSON.parse(saved);
-        }
-        return {};
-    }
-
     // Level definitions (fallback if no levels from editor)
     getLevelDefinitions() {
-        const editorLevels = this.loadLevelsFromEditor();
-        if (Object.keys(editorLevels).length > 0) {
+        const editorLevels = this.levelManager.getAllLevels();
+        if (editorLevels.length > 0) {
             // Convert editor format to testing format
             const convertedLevels = {};
-            Object.values(editorLevels).forEach(level => {
-                convertedLevels[level.id] = {
-                    title: level.name,
-                    description: level.description || 'No description provided',
-                    par: level.par,
-                    board: level.gridData,
-                    startingCode: level.startingCode || '# Write your robot code here\n# Example:\n# bot.move_forward()\n# bot.turn_right()',
-                    difficulty: level.difficulty || 'Beginner'
-                };
+            editorLevels.forEach(level => {
+                convertedLevels[level.id] = this.levelManager.toTestingFormat(level);
             });
             return convertedLevels;
         }
@@ -569,38 +555,21 @@ else:
     }
 
     parseBoardCSV(csvData) {
+        // Use the level manager to parse the CSV
+        const parsedData = this.levelManager.parseGridCSV(csvData);
+        
+        if (!parsedData.valid) {
+            this.logOutput(`Error parsing grid: ${parsedData.errors.join(', ')}`, 'error');
+            return;
+        }
+        
         // Reset board data
-        this.board = [];
-        this.gates = [];
-        this.keys = [];
+        this.board = parsedData.board;
+        this.gates = parsedData.gates;
+        this.keys = parsedData.keys;
         
-        const lines = csvData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-        let maxX = 0, maxY = 0;
-        
-        // Parse the simplified CSV format: x,y,type,color
-        lines.forEach(line => {
-            const [x, y, type, color] = line.split(',').map(s => s.trim());
-            const xNum = parseInt(x);
-            const yNum = parseInt(y);
-            
-            if (isNaN(xNum) || isNaN(yNum) || !type) return;
-            
-            maxX = Math.max(maxX, xNum);
-            maxY = Math.max(maxY, yNum);
-            
-            if (type === 'gate') {
-                this.gates.push({ x: xNum, y: yNum, color: color || '#000000' });
-            } else if (type === 'key') {
-                this.keys.push({ x: xNum, y: yNum, color: color || '#FFD700' });
-            } else {
-                // Regular board cell
-                if (!this.board[yNum]) this.board[yNum] = [];
-                this.board[yNum][xNum] = { type, color: color || '' };
-            }
-        });
-        
-        // Auto-detect grid size (add 1 because coordinates are 0-based)
-        const detectedSize = Math.max(maxX, maxY) + 1;
+        // Auto-detect grid size
+        const detectedSize = parsedData.gridSize;
         if (detectedSize > 0 && detectedSize <= 20) {
             this.gridSize = detectedSize;
             this.gridSizeSelect.value = this.gridSize.toString();
