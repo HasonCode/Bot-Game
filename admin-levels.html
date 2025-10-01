@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Robot Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Password Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .modal p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #38a169;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2f855a;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e53e3e;
+            margin-top: 15px;
+            padding: 10px;
+            background: #fed7d7;
+            border-radius: 5px;
+            display: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: none;
+        }
+
+        .main-content.show {
+            display: block;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .controls h3 {
+            margin-bottom: 20px;
+            color: #2d3748;
+            font-size: 1.4rem;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .control-group input,
+        .control-group select,
+        .control-group textarea {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus,
+        .control-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .control-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .levels-list {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .levels-list h3 {
+            margin-bottom: 20px;
+            color: #2d3748;
+            font-size: 1.4rem;
+        }
+
+        .level-item {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .level-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .level-item.selected {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .level-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        .level-order {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .level-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .level-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .level-actions .btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .empty-state h4 {
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .level-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Robot Game Admin Panel</h1>
+            <p>Create and manage game levels</p>
+        </div>
+
+        <!-- Password Modal -->
+        <div id="passwordModal" class="modal show">
+            <div class="modal-content">
+                <h2>🔒 Admin Access</h2>
+                <p>Please enter the admin password to access the level editor.</p>
+                <input type="password" id="passwordInput" class="password-input" placeholder="Enter admin password">
+                <div class="button-group">
+                    <button id="loginBtn" class="btn btn-primary">Login</button>
+                    <button id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                </div>
+                <div id="errorMessage" class="error-message">
+                    Invalid password. Please try again.
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="main-content">
+            <!-- Level Controls -->
+            <div class="controls">
+                <h3>📝 Level Editor</h3>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label for="levelName">Level Name</label>
+                        <input type="text" id="levelName" placeholder="Enter level name">
+                    </div>
+                    <div class="control-group">
+                        <label for="levelOrder">Order</label>
+                        <input type="number" id="levelOrder" placeholder="Level order" min="1">
+                    </div>
+                    <div class="control-group">
+                        <label for="levelDescription">Description</label>
+                        <textarea id="levelDescription" placeholder="Enter level description"></textarea>
+                    </div>
+                    <div class="control-group">
+                        <label for="levelPar">Par Score</label>
+                        <input type="number" id="levelPar" placeholder="Par score" min="1">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Grid Upload</label>
+                    <div class="file-upload" id="fileUpload">
+                        <input type="file" id="gridFile" accept=".csv,.txt">
+                        <p>📁 Click to upload grid CSV file</p>
+                    </div>
+                </div>
+
+                <div class="button-group" style="margin-top: 20px;">
+                    <button id="saveLevelBtn" class="btn btn-success">💾 Save Level</button>
+                    <button id="newLevelBtn" class="btn btn-primary">➕ New Level</button>
+                    <button id="deleteLevelBtn" class="btn btn-danger">🗑️ Delete Level</button>
+                </div>
+            </div>
+
+            <!-- Levels List -->
+            <div class="levels-list">
+                <h3>📚 Saved Levels</h3>
+                <div id="levelsList">
+                    <div class="empty-state">
+                        <h4>No levels created yet</h4>
+                        <p>Create your first level to get started!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AdminPanel {
+            constructor() {
+                this.levels = this.loadLevels();
+                this.currentLevel = null;
+                this.adminPassword = 'PostAP1234';
+                this.isAuthenticated = false;
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.checkAuthentication();
+            }
+
+            initializeElements() {
+                // Modal elements
+                this.passwordModal = document.getElementById('passwordModal');
+                this.passwordInput = document.getElementById('passwordInput');
+                this.loginBtn = document.getElementById('loginBtn');
+                this.cancelBtn = document.getElementById('cancelBtn');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.mainContent = document.getElementById('mainContent');
+
+                // Form elements
+                this.levelName = document.getElementById('levelName');
+                this.levelOrder = document.getElementById('levelOrder');
+                this.levelDescription = document.getElementById('levelDescription');
+                this.levelPar = document.getElementById('levelPar');
+                this.gridFile = document.getElementById('gridFile');
+                this.fileUpload = document.getElementById('fileUpload');
+
+                // Buttons
+                this.saveLevelBtn = document.getElementById('saveLevelBtn');
+                this.newLevelBtn = document.getElementById('newLevelBtn');
+                this.deleteLevelBtn = document.getElementById('deleteLevelBtn');
+
+                // List
+                this.levelsList = document.getElementById('levelsList');
+            }
+
+            setupEventListeners() {
+                // Authentication
+                this.loginBtn.addEventListener('click', () => this.authenticate());
+                this.cancelBtn.addEventListener('click', () => this.cancelAuthentication());
+                this.passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.authenticate();
+                });
+
+                // File upload
+                this.fileUpload.addEventListener('click', () => this.gridFile.click());
+                this.gridFile.addEventListener('change', (e) => this.handleFileUpload(e));
+
+                // Level management
+                this.saveLevelBtn.addEventListener('click', () => this.saveLevel());
+                this.newLevelBtn.addEventListener('click', () => this.newLevel());
+                this.deleteLevelBtn.addEventListener('click', () => this.deleteLevel());
+            }
+
+            checkAuthentication() {
+                const sessionAuth = sessionStorage.getItem('adminAuthenticated');
+                if (sessionAuth === 'true') {
+                    this.isAuthenticated = true;
+                    this.showMainContent();
+                } else {
+                    this.showPasswordModal();
+                }
+            }
+
+            showPasswordModal() {
+                this.passwordModal.classList.add('show');
+                this.mainContent.classList.remove('show');
+            }
+
+            hidePasswordModal() {
+                this.passwordModal.classList.remove('show');
+            }
+
+            authenticate() {
+                const enteredPassword = this.passwordInput.value.trim();
+                
+                if (enteredPassword === this.adminPassword) {
+                    this.isAuthenticated = true;
+                    sessionStorage.setItem('adminAuthenticated', 'true');
+                    this.hidePasswordModal();
+                    this.showMainContent();
+                    this.errorMessage.style.display = 'none';
+                } else {
+                    this.errorMessage.style.display = 'block';
+                    this.passwordInput.value = '';
+                    this.passwordInput.focus();
+                }
+            }
+
+            cancelAuthentication() {
+                window.location.href = 'levels.html';
+            }
+
+            showMainContent() {
+                this.mainContent.classList.add('show');
+                this.renderLevelsList();
+            }
+
+            loadLevels() {
+                const saved = localStorage.getItem('robotGameLevels');
+                return saved ? JSON.parse(saved) : {};
+            }
+
+            saveLevels() {
+                localStorage.setItem('robotGameLevels', JSON.stringify(this.levels));
+            }
+
+            newLevel() {
+                this.clearForm();
+                this.currentLevel = null;
+                this.updateLevelOrder();
+            }
+
+            clearForm() {
+                this.levelName.value = '';
+                this.levelDescription.value = '';
+                this.levelPar.value = '';
+                this.gridFile.value = '';
+                this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
+                this.setupFileUpload();
+            }
+
+            updateLevelOrder() {
+                const maxOrder = Math.max(...Object.values(this.levels).map(level => level.order || 0), 0);
+                this.levelOrder.value = maxOrder + 1;
+            }
+
+            setupFileUpload() {
+                this.gridFile = document.getElementById('gridFile');
+                this.fileUpload.addEventListener('click', () => this.gridFile.click());
+                this.gridFile.addEventListener('change', (e) => this.handleFileUpload(e));
+            }
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const csvContent = e.target.result;
+                        this.fileUpload.innerHTML = `<p>✅ ${file.name} uploaded successfully</p>`;
+                        
+                        // Store the grid data for saving
+                        this.gridData = csvContent;
+                    };
+                    reader.readAsText(file);
+                }
+            }
+
+            saveLevel() {
+                if (!this.isAuthenticated) {
+                    alert('Please login first.');
+                    return;
+                }
+
+                const name = this.levelName.value.trim();
+                const order = parseInt(this.levelOrder.value);
+                const description = this.levelDescription.value.trim();
+                const par = parseInt(this.levelPar.value);
+
+                if (!name) {
+                    alert('Please enter a level name.');
+                    return;
+                }
+
+                if (!order || order < 1) {
+                    alert('Please enter a valid order number.');
+                    return;
+                }
+
+                // Check if order already exists for different level
+                const existingLevel = Object.values(this.levels).find(level => 
+                    level.order === order && level.id !== this.currentLevel?.id
+                );
+
+                if (existingLevel) {
+                    if (!confirm(`Order ${order} is already used by "${existingLevel.name}". Do you want to continue?`)) {
+                        return;
+                    }
+                }
+
+                const levelData = {
+                    id: this.currentLevel?.id || Date.now(),
+                    name,
+                    order,
+                    description,
+                    par: par || 10,
+                    gridData: this.gridData || this.currentLevel?.gridData || '',
+                    created: this.currentLevel?.created || Date.now(),
+                    updated: Date.now()
+                };
+
+                this.levels[levelData.id] = levelData;
+                this.saveLevels();
+                this.renderLevelsList();
+                this.currentLevel = levelData;
+
+                alert('Level saved successfully!');
+            }
+
+            deleteLevel() {
+                if (!this.isAuthenticated) {
+                    alert('Please login first.');
+                    return;
+                }
+
+                if (!this.currentLevel) {
+                    alert('Please select a level to delete.');
+                    return;
+                }
+
+                if (confirm(`Are you sure you want to delete "${this.currentLevel.name}"?`)) {
+                    delete this.levels[this.currentLevel.id];
+                    this.saveLevels();
+                    this.renderLevelsList();
+                    this.newLevel();
+                    alert('Level deleted successfully!');
+                }
+            }
+
+            selectLevel(level) {
+                this.currentLevel = level;
+                this.levelName.value = level.name;
+                this.levelOrder.value = level.order;
+                this.levelDescription.value = level.description;
+                this.levelPar.value = level.par;
+                
+                if (level.gridData) {
+                    this.fileUpload.innerHTML = `<p>✅ Grid data loaded</p>`;
+                    this.gridData = level.gridData;
+                } else {
+                    this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
+                    this.setupFileUpload();
+                }
+
+                this.renderLevelsList();
+            }
+
+            renderLevelsList() {
+                const levelsArray = Object.values(this.levels).sort((a, b) => a.order - b.order);
+                
+                if (levelsArray.length === 0) {
+                    this.levelsList.innerHTML = `
+                        <div class="empty-state">
+                            <h4>No levels created yet</h4>
+                            <p>Create your first level to get started!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.levelsList.innerHTML = levelsArray.map(level => `
+                    <div class="level-item ${this.currentLevel?.id === level.id ? 'selected' : ''}" 
+                         onclick="adminPanel.selectLevel(${JSON.stringify(level).replace(/"/g, '&quot;')})">
+                        <div class="level-header">
+                            <div class="level-name">${level.name}</div>
+                            <div class="level-order">Order: ${level.order}</div>
+                        </div>
+                        <div class="level-info">
+                            <div><strong>Par:</strong> ${level.par}</div>
+                            <div><strong>Created:</strong> ${new Date(level.created).toLocaleDateString()}</div>
+                            <div><strong>Updated:</strong> ${new Date(level.updated).toLocaleDateString()}</div>
+                        </div>
+                        ${level.description ? `<p style="margin-top: 10px; color: #4a5568;">${level.description}</p>` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Initialize the admin panel
+        let adminPanel;
+        document.addEventListener('DOMContentLoaded', () => {
+            adminPanel = new AdminPanel();
+        });
+    </script>
+</body>
+</html>
