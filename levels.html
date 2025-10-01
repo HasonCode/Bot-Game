@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Game - Player Levels</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-links a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .nav-links a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .level-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .level-editor {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 0.5rem;
+        }
+
+        .player-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .level-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .level-item:hover {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .level-item.active {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .level-info {
+            flex: 1;
+        }
+
+        .level-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .level-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .completion-badge {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .checkmark {
+            color: #4CAF50;
+        }
+
+        .star {
+            color: #FFD700;
+        }
+
+        .level-info-display h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .level-description {
+            margin-bottom: 1rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .level-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .completion-status {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            border: 2px solid #ddd;
+        }
+
+        .completion-status h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .board-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+
+        .preview-canvas {
+            border: 1px solid #ccc;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .player-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .level-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🎮 Robot Game</div>
+        <nav class="nav-links">
+            <a href="game.html">Play</a>
+            <a href="levels.html" class="active">Levels</a>
+            <a href="testing.html">Testing</a>
+            <a href="admin-levels.html">Admin</a>
+        </nav>
+    </header>
+
+    <div class="main-container">
+        <div class="level-list">
+            <h2 class="section-title">Available Levels</h2>
+            <div class="player-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalLevels">0</div>
+                    <div class="stat-label">Total Levels</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completedLevels">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="starLevels">0</div>
+                    <div class="stat-label">Stars Earned</div>
+                </div>
+            </div>
+            <div id="levelList">
+                <!-- Levels will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="level-editor">
+            <h2 class="section-title">Level Details</h2>
+            <div id="levelEditorContent">
+                <div class="empty-state">
+                    <h3>Select a level to play</h3>
+                    <p>Choose a level from the library to see details and start playing.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PlayerLevelViewer {
+            constructor() {
+                this.levels = this.loadLevels();
+                this.playerProgress = this.loadPlayerProgress();
+                this.currentLevel = null;
+                this.currentLevelId = null;
+                
+                this.initializeElements();
+                this.renderLevelList();
+                this.updatePlayerStats();
+            }
+
+            initializeElements() {
+                this.levelList = document.getElementById('levelList');
+                this.levelEditorContent = document.getElementById('levelEditorContent');
+                this.totalLevels = document.getElementById('totalLevels');
+                this.completedLevels = document.getElementById('completedLevels');
+                this.starLevels = document.getElementById('starLevels');
+            }
+
+            loadLevels() {
+                const saved = localStorage.getItem('robotGameLevels');
+                if (saved) {
+                    const allLevels = JSON.parse(saved);
+                    // Only return published levels for players
+                    const publishedLevels = {};
+                    Object.values(allLevels).forEach(level => {
+                        if (level.published) {
+                            publishedLevels[level.id] = level;
+                        }
+                    });
+                    return publishedLevels;
+                }
+                return {};
+            }
+
+            loadPlayerProgress() {
+                const saved = localStorage.getItem('playerProgress');
+                return saved ? JSON.parse(saved) : {};
+            }
+
+            updatePlayerStats() {
+                const totalLevels = Object.keys(this.levels).length;
+                let completedCount = 0;
+                let starCount = 0;
+
+                Object.keys(this.levels).forEach(levelId => {
+                    const progress = this.playerProgress[levelId];
+                    if (progress && progress.completed) {
+                        completedCount++;
+                        if (progress.bestScore <= this.levels[levelId].par) {
+                            starCount++;
+                        }
+                    }
+                });
+
+                this.totalLevels.textContent = totalLevels;
+                this.completedLevels.textContent = completedCount;
+                this.starLevels.textContent = starCount;
+            }
+
+            renderLevelList() {
+                this.levelList.innerHTML = '';
+                
+                // Sort levels by order
+                const sortedLevels = Object.values(this.levels).sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                sortedLevels.forEach(level => {
+                    const progress = this.playerProgress[level.id];
+                    const levelElement = document.createElement('div');
+                    levelElement.className = 'level-item';
+                    levelElement.dataset.levelId = level.id;
+                    
+                    let statusIcon = '';
+                    let statusClass = '';
+                    let bestScoreText = '';
+                    
+                    if (progress && progress.completed) {
+                        if (progress.bestScore <= level.par) {
+                            statusIcon = '⭐';
+                            statusClass = 'star';
+                        } else {
+                            statusIcon = '✓';
+                            statusClass = 'checkmark';
+                        }
+                        bestScoreText = ` • Best: ${progress.bestScore}`;
+                    }
+                    
+                    levelElement.innerHTML = `
+                        <div class="level-info">
+                            <div class="level-name">${level.name}</div>
+                            <div class="level-details">
+                                ${level.difficulty} • Par: ${level.par}${bestScoreText}
+                            </div>
+                        </div>
+                        <div class="level-status">
+                            <span class="completion-badge ${statusClass}">${statusIcon}</span>
+                        </div>
+                    `;
+                    
+                    levelElement.addEventListener('click', () => this.selectLevel(level.id));
+                    this.levelList.appendChild(levelElement);
+                });
+            }
+
+            selectLevel(levelId) {
+                // Remove active class from all items
+                document.querySelectorAll('.level-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to selected item
+                document.querySelector(`[data-level-id="${levelId}"]`).classList.add('active');
+                
+                this.currentLevelId = levelId;
+                this.currentLevel = this.levels[levelId];
+                this.renderLevelDetails();
+            }
+
+            renderLevelDetails() {
+                if (!this.currentLevel) return;
+                
+                const progress = this.playerProgress[this.currentLevel.id];
+                
+                this.levelEditorContent.innerHTML = `
+                    <div class="level-info-display">
+                        <h3>${this.currentLevel.name}</h3>
+                        <p class="level-description">${this.currentLevel.description}</p>
+                        
+                        <div class="level-stats">
+                            <div class="stat-card">
+                                <div class="stat-value">${this.currentLevel.par}</div>
+                                <div class="stat-label">Par Score</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${this.currentLevel.difficulty}</div>
+                                <div class="stat-label">Difficulty</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${progress ? progress.bestScore || '--' : '--'}</div>
+                                <div class="stat-label">Best Score</div>
+                            </div>
+                        </div>
+                        
+                        ${progress && progress.completed ? `
+                            <div class="completion-status">
+                                <h4>Completion Status</h4>
+                                <p>✅ Level Completed!</p>
+                                <p>Best Score: ${progress.bestScore} commands</p>
+                                <p>${progress.bestScore <= this.currentLevel.par ? '⭐ Star Earned!' : '✓ Completed'}</p>
+                            </div>
+                        ` : `
+                            <div class="completion-status">
+                                <h4>Ready to Play!</h4>
+                                <p>This level has not been completed yet.</p>
+                                <p>Try to complete it in ${this.currentLevel.par} commands or fewer for a ⭐ star!</p>
+                            </div>
+                        `}
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="playLevel">🎮 Play Level</button>
+                            <button class="btn btn-secondary" id="viewCode">👁️ View Starting Code</button>
+                        </div>
+                        
+                        <div class="board-preview">
+                            <h4>Level Preview</h4>
+                            <canvas id="boardPreview" width="300" height="300" class="preview-canvas"></canvas>
+                        </div>
+                    </div>
+                `;
+                
+                this.setupLevelDetailEvents();
+                this.drawBoardPreview();
+            }
+
+            setupLevelDetailEvents() {
+                document.getElementById('playLevel').addEventListener('click', () => this.playLevel());
+                document.getElementById('viewCode').addEventListener('click', () => this.viewCode());
+            }
+
+            playLevel() {
+                // Open testing page with this level loaded
+                const levelData = JSON.stringify(this.currentLevel);
+                localStorage.setItem('testLevelData', levelData);
+                window.open('testing.html?level=' + this.currentLevelId, '_blank');
+            }
+
+            viewCode() {
+                const codeWindow = window.open('', '_blank', 'width=600,height=400');
+                codeWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>${this.currentLevel.name} - Starting Code</title>
+                            <style>
+                                body { font-family: monospace; padding: 20px; background: #f8f9fa; }
+                                pre { background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 5px; overflow-x: auto; }
+                            </style>
+                        </head>
+                        <body>
+                            <h2>${this.currentLevel.name} - Starting Code</h2>
+                            <pre>${this.currentLevel.startingCode}</pre>
+                            <p><a href="javascript:window.close()">Close Window</a></p>
+                        </body>
+                    </html>
+                `);
+            }
+
+            drawBoardPreview() {
+                const canvas = document.getElementById('boardPreview');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                const cellSize = 20;
+                const boardData = this.parseBoardCSV(this.currentLevel.boardData);
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw grid
+                for (let y = 0; y < boardData.gridSize; y++) {
+                    for (let x = 0; x < boardData.gridSize; x++) {
+                        const cell = boardData.board[y][x];
+                        const pixelX = x * cellSize;
+                        const pixelY = y * cellSize;
+                        
+                        // Draw cell background
+                        ctx.fillStyle = this.getCellColor(cell.type);
+                        ctx.fillRect(pixelX, pixelY, cellSize, cellSize);
+                        
+                        // Draw cell border
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(pixelX, pixelY, cellSize, cellSize);
+                        
+                        // Draw special elements
+                        if (cell.type === 'key') {
+                            ctx.fillStyle = '#FFD700';
+                            ctx.fillRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+                        } else if (cell.type === 'ending') {
+                            ctx.fillStyle = '#FF6B6B';
+                            ctx.fillRect(pixelX + 2, pixelY + 2, cellSize - 4, cellSize - 4);
+                        }
+                    }
+                }
+            }
+
+            parseBoardCSV(csvData) {
+                const lines = csvData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
+                const board = [];
+                const gates = [];
+                const keys = [];
+                let gridSize = 0;
+                
+                lines.forEach(line => {
+                    const [x, y, type, color] = line.split(',').map(s => s.trim());
+                    if (type && type !== 'gate' && type !== 'key') {
+                        const xNum = parseInt(x);
+                        const yNum = parseInt(y);
+                        gridSize = Math.max(gridSize, xNum + 1, yNum + 1);
+                        
+                        if (!board[yNum]) board[yNum] = [];
+                        board[yNum][xNum] = { type, color };
+                    } else if (type === 'key') {
+                        keys.push({ x: parseInt(x), y: parseInt(y), color });
+                    } else if (type === 'gate') {
+                        gates.push({ x: parseInt(x), y: parseInt(y), color });
+                    }
+                });
+                
+                return { board, gates, keys, gridSize };
+            }
+
+            getCellColor(type) {
+                const colors = {
+                    'normal': '#F0F8FF',
+                    'obstacle': '#2C3E50',
+                    'reset': '#3498DB',
+                    'ending': '#E74C3C',
+                    'key': '#F39C12'
+                };
+                return colors[type] || colors['normal'];
+            }
+        }
+
+        // Initialize the player level viewer when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new PlayerLevelViewer();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Game Board Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Bot Game Board Editor</h1>
+            <div class="header-controls">
+                <div class="grid-size-control">
+                    <label for="gridSize">Grid Size:</label>
+                    <select id="gridSize">
+                        <option value="5">5x5</option>
+                        <option value="6">6x6</option>
+                        <option value="7">7x7</option>
+                        <option value="8">8x8</option>
+                        <option value="9">9x9</option>
+                        <option value="10">10x10</option>
+                        <option value="11">11x11</option>
+                        <option value="12">12x12</option>
+                        <option value="13">13x13</option>
+                        <option value="14">14x14</option>
+                        <option value="15" selected>15x15</option>
+                    </select>
+                    <button id="resizeGrid">Resize Grid</button>
+                </div>
+                <div style="margin-left: 20px;">
+    <a href="game.html" style="background: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+        🎮 Play Game
+    </a>
+    <a href="levels.html" style="background: #2196F3; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+        📚 Levels
+    </a>
+    <a href="testing.html" style="background: #FF9800; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+        🚀 Testing
+    </a>
+    <a href="admin-levels.html" style="background: #9C27B0; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 600;">
+        🔧 Admin
+    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="toolbar">
+                <div class="tool-section">
+                    <h3>Tools</h3>
+                    <div class="tool-buttons">
+                        <button class="tool-btn active" data-tool="select">Select</button>
+                        <button class="tool-btn" data-tool="tile">Tile</button>
+                        <button class="tool-btn" data-tool="key">Key</button>
+                        <button class="tool-btn" data-tool="gate">Gate</button>
+                        <button class="tool-btn" data-tool="custom">Custom Asset</button>
+                        <button class="tool-btn" data-tool="delete">Delete</button>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Tile Types</h3>
+                    <div class="tile-types" id="tileTypes" style="display: none;">
+                        <button class="tile-type-btn" data-tile="normal">Normal</button>
+                        <button class="tile-type-btn active" data-tile="obstacle">Obstacle (Black)</button>
+                        <button class="tile-type-btn" data-tile="reset">Reset (Blue-Gray)</button>
+                        <button class="tile-type-btn" data-tile="ending">Ending Zone (Gray)</button>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Gate Options</h3>
+                    <div class="gate-options" id="gateOptions" style="display: none;">
+                        <label for="gateColor">Gate Color:</label>
+                        <select id="gateColor">
+                            <option value="#8B4513">Brown</option>
+                            <option value="#FF0000">Red</option>
+                            <option value="#0000FF">Blue</option>
+                            <option value="#00FF00">Green</option>
+                            <option value="#FFD700">Gold</option>
+                            <option value="#800080">Purple</option>
+                            <option value="#FFA500">Orange</option>
+                            <option value="#FF69B4">Pink</option>
+                        </select>
+                        <label for="gateType">Gate Type:</label>
+                        <select id="gateType">
+                            <option value="horizontal">Horizontal</option>
+                            <option value="vertical">Vertical</option>
+                        </select>
+                        <label for="gatePosition">Gate Position:</label>
+                        <select id="gatePosition">
+                            <option value="center">Center</option>
+                            <option value="top">Top Border</option>
+                            <option value="bottom">Bottom Border</option>
+                            <option value="left">Left Border</option>
+                            <option value="right">Right Border</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Key Options</h3>
+                    <div class="key-options" id="keyOptions" style="display: none;">
+                        <label for="keyColor">Key Color:</label>
+                        <select id="keyColor">
+                            <option value="#FFD700">Gold</option>
+                            <option value="#C0C0C0">Silver</option>
+                            <option value="#CD7F32">Bronze</option>
+                            <option value="#FF0000">Red</option>
+                            <option value="#0000FF">Blue</option>
+                            <option value="#00FF00">Green</option>
+                            <option value="#800080">Purple</option>
+                            <option value="#FF69B4">Pink</option>
+                        </select>
+                        <div class="key-preview">
+                            <label>Preview:</label>
+                            <canvas id="keyPreview" width="32" height="32" style="border: 1px solid #ccc; margin-top: 5px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Custom Asset</h3>
+                    <div class="custom-asset" id="customAssetSection" style="display: none;">
+                        <input type="file" id="assetUpload" accept="image/*">
+                        <label for="assetName">Asset Name:</label>
+                        <input type="text" id="assetName" placeholder="Enter asset name">
+                        <button id="addCustomAsset">Add Asset</button>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Actions</h3>
+                    <div class="action-buttons">
+                        <button id="clearBoard">Clear Board</button>
+                        
+                        <div class="save-section">
+                            <label for="csvFileName">CSV File Name:</label>
+                            <input type="text" id="csvFileName" placeholder="Enter CSV filename (no extension)" value="bot_game_board_15x15">
+                            <button id="saveCSV">Save as CSV</button>
+                        </div>
+                        
+                        <div class="save-section">
+                            <label for="pngFileName">PNG File Name:</label>
+                            <input type="text" id="pngFileName" placeholder="Enter PNG filename (no extension)" value="bot_game_board_15x15">
+                            <button id="savePNG">Save as PNG</button>
+                        </div>
+                        
+                        <input type="file" id="loadFile" accept=".csv,.json" style="display: none;">
+                        <button id="loadFileBtn">Load File</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="board-container">
+                <canvas id="gameBoard"></canvas>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status">Ready - Select a tool to start editing</span>
+            <span id="coordinates"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

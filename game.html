@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Game - Play Levels</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-links a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .nav-links a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+
+        .level-selector {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .game-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 0.5rem;
+        }
+
+        .level-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .level-item:hover {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .level-item.active {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .level-item.completed {
+            background: #d4edda;
+        }
+
+        .level-item.completed:hover {
+            background: #c3e6cb;
+        }
+
+        .level-info {
+            flex: 1;
+        }
+
+        .level-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .level-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .completion-badge {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .checkmark {
+            color: #4CAF50;
+        }
+
+        .star {
+            color: #FFD700;
+        }
+
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .level-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .level-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .game-board {
+            position: relative;
+            margin: 0 auto;
+            border: 3px solid #333;
+            border-radius: 8px;
+            background: #f0f8ff;
+        }
+
+        .game-canvas {
+            display: block;
+            border-radius: 5px;
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .robot-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .robot-position {
+            background: #e9ecef;
+            padding: 0.5rem;
+            border-radius: 3px;
+        }
+
+        .robot-direction {
+            background: #e9ecef;
+            padding: 0.5rem;
+            border-radius: 3px;
+        }
+
+        .robot-keys {
+            background: #e9ecef;
+            padding: 0.5rem;
+            border-radius: 3px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .completion-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .completion-message.show {
+            display: block;
+            animation: completionSlideIn 0.5s ease-out;
+        }
+
+        @keyframes completionSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .completion-stars {
+            font-size: 3rem;
+            margin: 1rem 0;
+        }
+
+        .completion-text {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .level-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .game-controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .control-group {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🎮 Robot Game</div>
+        <nav class="nav-links">
+            <a href="levels.html">Levels</a>
+            <a href="game.html" class="active">Play</a>
+            <a href="testing.html">Testing</a>
+            <a href="admin-levels.html">Admin</a>
+        </nav>
+    </header>
+
+    <div class="main-container">
+        <div class="level-selector">
+            <h2 class="section-title">Levels</h2>
+            <div id="levelList">
+                <!-- Levels will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div id="gameContent">
+                <div class="empty-state">
+                    <h3>Select a level to play</h3>
+                    <p>Choose a level from the list to start playing.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Message Modal -->
+    <div class="completion-message" id="completionMessage">
+        <div class="completion-stars" id="completionStars">⭐</div>
+        <div class="completion-text" id="completionText">Level Completed!</div>
+        <div class="completion-details" id="completionDetails"></div>
+        <div class="control-group" style="margin-top: 1rem;">
+            <button class="btn btn-primary" id="nextLevelBtn">Next Level</button>
+            <button class="btn btn-secondary" id="retryBtn">Retry</button>
+            <button class="btn btn-secondary" id="closeCompletionBtn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        class RobotGame {
+            constructor() {
+                this.levels = this.loadLevels();
+                this.playerProgress = this.loadPlayerProgress();
+                this.currentLevel = null;
+                this.currentLevelId = null;
+                
+                // Game state
+                this.gameBoard = null;
+                this.robot = null;
+                this.commands = [];
+                this.commandIndex = 0;
+                this.isRunning = false;
+                this.commandsUsed = 0;
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.renderLevelList();
+            }
+
+            initializeElements() {
+                this.levelList = document.getElementById('levelList');
+                this.gameContent = document.getElementById('gameContent');
+                this.completionMessage = document.getElementById('completionMessage');
+                this.completionStars = document.getElementById('completionStars');
+                this.completionText = document.getElementById('completionText');
+                this.completionDetails = document.getElementById('completionDetails');
+                this.nextLevelBtn = document.getElementById('nextLevelBtn');
+                this.retryBtn = document.getElementById('retryBtn');
+                this.closeCompletionBtn = document.getElementById('closeCompletionBtn');
+            }
+
+            setupEventListeners() {
+                this.nextLevelBtn.addEventListener('click', () => this.nextLevel());
+                this.retryBtn.addEventListener('click', () => this.retryLevel());
+                this.closeCompletionBtn.addEventListener('click', () => this.hideCompletion());
+            }
+
+            loadLevels() {
+                const saved = localStorage.getItem('robotGameLevels');
+                if (saved) {
+                    const allLevels = JSON.parse(saved);
+                    // Only return published levels for players
+                    const publishedLevels = {};
+                    Object.values(allLevels).forEach(level => {
+                        if (level.published) {
+                            publishedLevels[level.id] = level;
+                        }
+                    });
+                    return publishedLevels;
+                }
+                return {};
+            }
+
+            loadPlayerProgress() {
+                const saved = localStorage.getItem('playerProgress');
+                return saved ? JSON.parse(saved) : {};
+            }
+
+            savePlayerProgress() {
+                localStorage.setItem('playerProgress', JSON.stringify(this.playerProgress));
+            }
+
+            renderLevelList() {
+                this.levelList.innerHTML = '';
+                
+                // Sort levels by order
+                const sortedLevels = Object.values(this.levels).sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                sortedLevels.forEach(level => {
+                    const progress = this.playerProgress[level.id];
+                    const levelElement = document.createElement('div');
+                    levelElement.className = 'level-item';
+                    if (progress && progress.completed) {
+                        levelElement.classList.add('completed');
+                    }
+                    if (level.id === this.currentLevelId) {
+                        levelElement.classList.add('active');
+                    }
+                    levelElement.dataset.levelId = level.id;
+                    
+                    let statusIcon = '';
+                    let statusClass = '';
+                    let bestScoreText = '';
+                    
+                    if (progress && progress.completed) {
+                        if (progress.bestScore <= level.par) {
+                            statusIcon = '⭐';
+                            statusClass = 'star';
+                        } else {
+                            statusIcon = '✓';
+                            statusClass = 'checkmark';
+                        }
+                        bestScoreText = ` • Best: ${progress.bestScore}`;
+                    }
+                    
+                    levelElement.innerHTML = `
+                        <div class="level-info">
+                            <div class="level-name">${level.name}</div>
+                            <div class="level-details">
+                                ${level.difficulty} • Par: ${level.par}${bestScoreText}
+                            </div>
+                        </div>
+                        <div class="level-status">
+                            <span class="completion-badge ${statusClass}">${statusIcon}</span>
+                        </div>
+                    `;
+                    
+                    levelElement.addEventListener('click', () => this.selectLevel(level.id));
+                    this.levelList.appendChild(levelElement);
+                });
+            }
+
+            selectLevel(levelId) {
+                // Remove active class from all items
+                document.querySelectorAll('.level-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to selected item
+                document.querySelector(`[data-level-id="${levelId}"]`).classList.add('active');
+                
+                this.currentLevelId = levelId;
+                this.currentLevel = this.levels[levelId];
+                this.renderGameArea();
+            }
+
+            renderGameArea() {
+                if (!this.currentLevel) return;
+                
+                this.gameContent.innerHTML = `
+                    <div class="level-header">
+                        <div class="level-title">${this.currentLevel.name}</div>
+                        <div class="level-stats">
+                            <div class="stat-card">
+                                <div class="stat-value">${this.currentLevel.par}</div>
+                                <div class="stat-label">Par Score</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${this.currentLevel.difficulty}</div>
+                                <div class="stat-label">Difficulty</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${this.commandsUsed}</div>
+                                <div class="stat-label">Commands Used</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-board" id="gameBoard">
+                        <canvas id="gameCanvas" class="game-canvas" width="600" height="600"></canvas>
+                    </div>
+                    
+                    <div class="game-controls">
+                        <div class="control-group">
+                            <button class="btn btn-primary" id="playBtn">▶️ Play</button>
+                            <button class="btn btn-secondary" id="pauseBtn" disabled>⏸️ Pause</button>
+                            <button class="btn btn-warning" id="resetBtn">🔄 Reset</button>
+                            <button class="btn btn-danger" id="stopBtn" disabled>⏹️ Stop</button>
+                        </div>
+                        <div class="robot-info">
+                            <div class="robot-position">Position: <span id="robotPosition">0, 0</span></div>
+                            <div class="robot-direction">Direction: <span id="robotDirection">East</span></div>
+                            <div class="robot-keys">Keys: <span id="robotKeys">None</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                `;
+                
+                this.setupGameControls();
+                this.initializeGame();
+            }
+
+            setupGameControls() {
+                document.getElementById('playBtn').addEventListener('click', () => this.playGame());
+                document.getElementById('pauseBtn').addEventListener('click', () => this.pauseGame());
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
+                document.getElementById('stopBtn').addEventListener('click', () => this.stopGame());
+            }
+
+            initializeGame() {
+                const canvas = document.getElementById('gameCanvas');
+                this.gameBoard = new GameBoard(canvas, this.currentLevel.boardData);
+                this.robot = this.gameBoard.robot;
+                this.commands = this.parseCommands(this.currentLevel.startingCode);
+                this.commandIndex = 0;
+                this.commandsUsed = 0;
+                this.isRunning = false;
+                
+                this.updateRobotInfo();
+                this.updateProgress();
+            }
+
+            parseCommands(code) {
+                const commands = [];
+                const lines = code.split('\n');
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmedLine = line.trim();
+
+                    if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+
+                    // Handle control structures FIRST (if, for loops)
+                    if (trimmedLine.includes('for i in range(')) {
+                        const result = this.parseForLoop(lines, i);
+                        commands.push(...result.commands);
+                        i = result.nextIndex - 1; // -1 because loop will increment
+                    }
+                    // Handle if statements with proper conditional evaluation
+                    else if (trimmedLine.startsWith('if ')) {
+                        const result = this.parseIfStatement(lines, i);
+                        commands.push(...result.commands);
+                        i = result.nextIndex - 1; // -1 because loop will increment
+                    }
+                    // Handle simple commands AFTER control structures
+                    else if (trimmedLine.includes('bot.move_forward()')) {
+                        commands.push('move_forward');
+                    } else if (trimmedLine.includes('bot.move_backward()')) {
+                        commands.push('move_backward');
+                    } else if (trimmedLine.includes('bot.turn_right()')) {
+                        commands.push('turn_right');
+                    } else if (trimmedLine.includes('bot.turn_left()')) {
+                        commands.push('turn_left');
+                    } else if (trimmedLine.includes('bot.can_move()')) {
+                        commands.push('can_move');
+                    }
+                }
+
+                return commands;
+            }
+
+            parseForLoop(lines, startIndex) {
+                const commands = [];
+                const line = lines[startIndex];
+                const match = line.match(/for i in range\((\d+)\):/);
+                
+                if (match) {
+                    const iterations = parseInt(match[1]);
+                    const indentedCommands = this.parseIndentedBlock(lines, startIndex + 1);
+                    
+                    for (let i = 0; i < iterations; i++) {
+                        commands.push(...indentedCommands);
+                    }
+                }
+                
+                return { commands, nextIndex: startIndex + 1 };
+            }
+
+            parseIfStatement(lines, startIndex) {
+                const commands = [];
+                let currentIndex = startIndex;
+                
+                // Parse if condition
+                const ifLine = lines[currentIndex];
+                const ifCondition = ifLine.replace(/^if\s+/, '').replace(/:\s*$/, '');
+                
+                // Parse indented block
+                const ifCommands = this.parseIndentedBlock(lines, currentIndex + 1);
+                currentIndex += ifCommands.nextIndex;
+                
+                // Create conditional command object
+                const conditionalCommand = {
+                    type: 'conditional',
+                    condition: ifCondition,
+                    commands: ifCommands.commands
+                };
+                
+                commands.push(conditionalCommand);
+                
+                return { commands, nextIndex: currentIndex };
+            }
+
+            parseIndentedBlock(lines, startIndex) {
+                const commands = [];
+                const baseIndentation = this.getIndentationLevel(lines[startIndex]);
+                let currentIndex = startIndex;
+                
+                while (currentIndex < lines.length) {
+                    const line = lines[currentIndex];
+                    const trimmedLine = line.trim();
+                    
+                    if (!trimmedLine || trimmedLine.startsWith('#')) {
+                        currentIndex++;
+                        continue;
+                    }
+                    
+                    const lineIndentation = this.getIndentationLevel(line);
+                    
+                    if (lineIndentation <= baseIndentation && currentIndex > startIndex) {
+                        break;
+                    }
+                    
+                    // Handle control structures within indented blocks
+                    if (trimmedLine.includes('for i in range(')) {
+                        const result = this.parseForLoop(lines, currentIndex);
+                        commands.push(...result.commands);
+                        currentIndex = result.nextIndex;
+                    } else if (trimmedLine.startsWith('if ')) {
+                        const result = this.parseIfStatement(lines, currentIndex);
+                        commands.push(...result.commands);
+                        currentIndex = result.nextIndex;
+                    } else if (trimmedLine.includes('bot.move_forward()')) {
+                        commands.push('move_forward');
+                        currentIndex++;
+                    } else if (trimmedLine.includes('bot.move_backward()')) {
+                        commands.push('move_backward');
+                        currentIndex++;
+                    } else if (trimmedLine.includes('bot.turn_right()')) {
+                        commands.push('turn_right');
+                        currentIndex++;
+                    } else if (trimmedLine.includes('bot.turn_left()')) {
+                        commands.push('turn_left');
+                        currentIndex++;
+                    } else if (trimmedLine.includes('bot.can_move()')) {
+                        commands.push('can_move');
+                        currentIndex++;
+                    } else {
+                        currentIndex++;
+                    }
+                }
+                
+                return { commands, nextIndex: currentIndex };
+            }
+
+            getIndentationLevel(line) {
+                return line.length - line.trimStart().length;
+            }
+
+            async playGame() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                document.getElementById('playBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = false;
+                
+                while (this.commandIndex < this.commands.length && this.isRunning) {
+                    const command = this.commands[this.commandIndex];
+                    await this.executeCommand(command);
+                    this.commandIndex++;
+                    this.commandsUsed++;
+                    
+                    this.updateRobotInfo();
+                    this.updateProgress();
+                    
+                    // Check for level completion
+                    if (this.checkLevelCompletion()) {
+                        this.completeLevel();
+                        break;
+                    }
+                    
+                    // Small delay for visualization
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                this.isRunning = false;
+                document.getElementById('playBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
+            }
+
+            pauseGame() {
+                this.isRunning = false;
+                document.getElementById('playBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+            }
+
+            stopGame() {
+                this.isRunning = false;
+                this.commandIndex = 0;
+                this.commandsUsed = 0;
+                this.initializeGame();
+                document.getElementById('playBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
+            }
+
+            resetGame() {
+                this.stopGame();
+                this.initializeGame();
+            }
+
+            async executeCommand(command) {
+                // Handle conditional commands
+                if (typeof command === 'object' && command.type === 'conditional') {
+                    await this.executeConditional(command);
+                    return;
+                }
+
+                // Handle regular commands
+                switch (command) {
+                    case 'move_forward':
+                        this.robot.move_forward();
+                        break;
+                    case 'move_backward':
+                        this.robot.move_backward();
+                        break;
+                    case 'turn_right':
+                        this.robot.turn_right();
+                        break;
+                    case 'turn_left':
+                        this.robot.turn_left();
+                        break;
+                    case 'can_move':
+                        this.robot.can_move();
+                        break;
+                }
+                
+                this.gameBoard.checkTileEffects();
+            }
+
+            async executeConditional(conditionalCommand) {
+                const condition = conditionalCommand.condition;
+                
+                if (this.evaluateCondition(condition)) {
+                    for (const cmd of conditionalCommand.commands) {
+                        await this.executeCommand(cmd);
+                    }
+                }
+            }
+
+            evaluateCondition(condition) {
+                try {
+                    // Replace bot properties with actual values
+                    let processedCondition = condition
+                        .replace(/bot\.x/g, this.robot.x)
+                        .replace(/bot\.y/g, this.robot.y)
+                        .replace(/bot\.direction/g, `"${this.robot.direction}"`)
+                        .replace(/bot\.can_move\(\)/g, this.robot.can_move())
+                        .replace(/bot\.keys/g, JSON.stringify(this.robot.keys));
+                    
+                    // Evaluate the condition
+                    return eval(processedCondition);
+                } catch (error) {
+                    console.error('Error evaluating condition:', error);
+                    return false;
+                }
+            }
+
+            checkLevelCompletion() {
+                const cell = this.gameBoard.board[this.robot.y] && this.gameBoard.board[this.robot.y][this.robot.x];
+                return cell && cell.type === 'ending';
+            }
+
+            completeLevel() {
+                const progress = this.playerProgress[this.currentLevel.id] || {};
+                const wasCompleted = progress.completed;
+                const wasStar = progress.completed && progress.bestScore <= this.currentLevel.par;
+                
+                // Update progress
+                this.playerProgress[this.currentLevel.id] = {
+                    completed: true,
+                    bestScore: Math.min(progress.bestScore || Infinity, this.commandsUsed),
+                    lastPlayed: Date.now()
+                };
+                this.savePlayerProgress();
+                
+                // Determine completion type
+                const isStar = this.commandsUsed <= this.currentLevel.par;
+                const isNewBest = !progress.bestScore || this.commandsUsed < progress.bestScore;
+                
+                // Show completion message
+                this.showCompletion(isStar, isNewBest, wasCompleted, wasStar);
+                
+                // Update level list
+                this.renderLevelList();
+            }
+
+            showCompletion(isStar, isNewBest, wasCompleted, wasStar) {
+                let stars = '';
+                let message = '';
+                let details = '';
+                
+                if (isStar) {
+                    stars = '⭐⭐⭐';
+                    message = 'Perfect! Star Earned!';
+                    details = `Completed in ${this.commandsUsed} commands (Par: ${this.currentLevel.par})`;
+                } else {
+                    stars = '✓';
+                    message = 'Level Completed!';
+                    details = `Completed in ${this.commandsUsed} commands (Par: ${this.currentLevel.par})`;
+                }
+                
+                if (isNewBest && wasCompleted) {
+                    details += '<br/>🎉 New personal best!';
+                }
+                
+                this.completionStars.innerHTML = stars;
+                this.completionText.textContent = message;
+                this.completionDetails.innerHTML = details;
+                
+                this.completionMessage.classList.add('show');
+            }
+
+            hideCompletion() {
+                this.completionMessage.classList.remove('show');
+            }
+
+            nextLevel() {
+                const sortedLevels = Object.values(this.levels).sort((a, b) => (a.order || 0) - (b.order || 0));
+                const currentIndex = sortedLevels.findIndex(level => level.id === this.currentLevelId);
+                
+                if (currentIndex < sortedLevels.length - 1) {
+                    this.selectLevel(sortedLevels[currentIndex + 1].id);
+                }
+                
+                this.hideCompletion();
+            }
+
+            retryLevel() {
+                this.hideCompletion();
+                this.resetGame();
+            }
+
+            updateRobotInfo() {
+                const positionEl = document.getElementById('robotPosition');
+                const directionEl = document.getElementById('robotDirection');
+                const keysEl = document.getElementById('robotKeys');
+                
+                if (positionEl) positionEl.textContent = `${this.robot.x}, ${this.robot.y}`;
+                if (directionEl) directionEl.textContent = this.robot.direction;
+                if (keysEl) keysEl.textContent = this.robot.keys.length > 0 ? this.robot.keys.join(', ') : 'None';
+            }
+
+            updateProgress() {
+                const progressFill = document.getElementById('progressFill');
+                const commandsUsedEl = document.querySelector('.stat-value');
+                
+                if (progressFill) {
+                    const progress = Math.min((this.commandIndex / this.commands.length) * 100, 100);
+                    progressFill.style.width = `${progress}%`;
+                }
+                
+                if (commandsUsedEl) {
+                    commandsUsedEl.textContent = this.commandsUsed;
+                }
+            }
+        }
+
+        // Game Board Class
+        class GameBoard {
+            constructor(canvas, boardData) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.boardData = this.parseBoardCSV(boardData);
+                this.board = this.boardData.board;
+                this.gates = this.boardData.gates;
+                this.keys = this.boardData.keys;
+                this.gridSize = this.boardData.gridSize;
+                this.cellSize = Math.floor(canvas.width / this.gridSize);
+                
+                this.robot = {
+                    x: 0,
+                    y: 0,
+                    direction: 'East',
+                    keys: [],
+                    move_forward: () => this.moveRobot('forward'),
+                    move_backward: () => this.moveRobot('backward'),
+                    turn_right: () => this.turnRobot('right'),
+                    turn_left: () => this.turnRobot('left'),
+                    can_move: () => this.canMoveForward()
+                };
+                
+                this.drawBoard();
+            }
+
+            parseBoardCSV(csvData) {
+                const lines = csvData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
+                const board = [];
+                const gates = [];
+                const keys = [];
+                let gridSize = 0;
+                
+                lines.forEach(line => {
+                    const [x, y, type, color] = line.split(',').map(s => s.trim());
+                    if (type && type !== 'gate' && type !== 'key') {
+                        const xNum = parseInt(x);
+                        const yNum = parseInt(y);
+                        gridSize = Math.max(gridSize, xNum + 1, yNum + 1);
+                        
+                        if (!board[yNum]) board[yNum] = [];
+                        board[yNum][xNum] = { type, color };
+                    } else if (type === 'key') {
+                        keys.push({ x: parseInt(x), y: parseInt(y), color });
+                    } else if (type === 'gate') {
+                        gates.push({ x: parseInt(x), y: parseInt(y), color });
+                    }
+                });
+                
+                return { board, gates, keys, gridSize };
+            }
+
+            drawBoard() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw grid
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        const cell = this.board[y] && this.board[y][x];
+                        if (cell) {
+                            this.drawCell(x, y, cell);
+                        }
+                    }
+                }
+                
+                // Draw gates
+                this.gates.forEach(gate => {
+                    this.drawGate(gate);
+                });
+                
+                // Draw keys
+                this.keys.forEach(key => {
+                    this.drawKey(key);
+                });
+                
+                // Draw robot
+                this.drawRobot();
+            }
+
+            drawCell(x, y, cell) {
+                const pixelX = x * this.cellSize;
+                const pixelY = y * this.cellSize;
+                
+                // Draw cell background
+                this.ctx.fillStyle = this.getCellColor(cell.type);
+                this.ctx.fillRect(pixelX, pixelY, this.cellSize, this.cellSize);
+                
+                // Draw cell border
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(pixelX, pixelY, this.cellSize, this.cellSize);
+            }
+
+            drawGate(gate) {
+                const x = gate.x * this.cellSize;
+                const y = gate.y * this.cellSize;
+                
+                this.ctx.strokeStyle = gate.color;
+                this.ctx.lineWidth = 4;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, y);
+                this.ctx.lineTo(x + this.cellSize, y + this.cellSize);
+                this.ctx.stroke();
+            }
+
+            drawKey(key) {
+                const x = key.x * this.cellSize;
+                const y = key.y * this.cellSize;
+                
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+                
+                this.ctx.fillStyle = '#000';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('K', x + this.cellSize / 2, y + this.cellSize / 2 + 4);
+            }
+
+            drawRobot() {
+                const x = this.robot.x * this.cellSize;
+                const y = this.robot.y * this.cellSize;
+                
+                this.ctx.fillStyle = '#FF6B6B';
+                this.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+                
+                // Draw direction indicator
+                this.ctx.fillStyle = '#000';
+                this.ctx.font = '16px Arial';
+                this.ctx.textAlign = 'center';
+                const directionSymbols = { 'North': '↑', 'South': '↓', 'East': '→', 'West': '←' };
+                this.ctx.fillText(directionSymbols[this.robot.direction], x + this.cellSize / 2, y + this.cellSize / 2 + 5);
+            }
+
+            getCellColor(type) {
+                const colors = {
+                    'normal': '#F0F8FF',
+                    'obstacle': '#2C3E50',
+                    'reset': '#3498DB',
+                    'ending': '#E74C3C'
+                };
+                return colors[type] || colors['normal'];
+            }
+
+            moveRobot(direction) {
+                let newX = this.robot.x;
+                let newY = this.robot.y;
+                
+                if (direction === 'forward') {
+                    switch (this.robot.direction) {
+                        case 'North': newY--; break;
+                        case 'South': newY++; break;
+                        case 'East': newX++; break;
+                        case 'West': newX--; break;
+                    }
+                } else if (direction === 'backward') {
+                    switch (this.robot.direction) {
+                        case 'North': newY++; break;
+                        case 'South': newY--; break;
+                        case 'East': newX--; break;
+                        case 'West': newX++; break;
+                    }
+                }
+                
+                if (this.canMoveTo(newX, newY)) {
+                    this.robot.x = newX;
+                    this.robot.y = newY;
+                    this.drawBoard();
+                    return true;
+                }
+                return false;
+            }
+
+            turnRobot(direction) {
+                const directions = ['North', 'East', 'South', 'West'];
+                const currentIndex = directions.indexOf(this.robot.direction);
+                
+                if (direction === 'right') {
+                    this.robot.direction = directions[(currentIndex + 1) % 4];
+                } else {
+                    this.robot.direction = directions[(currentIndex - 1 + 4) % 4];
+                }
+                
+                this.drawBoard();
+            }
+
+            canMoveForward() {
+                let newX = this.robot.x;
+                let newY = this.robot.y;
+                
+                switch (this.robot.direction) {
+                    case 'North': newY--; break;
+                    case 'South': newY++; break;
+                    case 'East': newX++; break;
+                    case 'West': newX--; break;
+                }
+                
+                return this.canMoveTo(newX, newY);
+            }
+
+            canMoveTo(x, y) {
+                // Check boundaries
+                if (x < 0 || x >= this.gridSize || y < 0 || y >= this.gridSize) {
+                    return false;
+                }
+                
+                // Check obstacles
+                const cell = this.board[y] && this.board[y][x];
+                if (cell && cell.type === 'obstacle') {
+                    return false;
+                }
+                
+                // Check gates
+                if (this.isGateBlocking(this.robot.x, this.robot.y, x, y)) {
+                    return false;
+                }
+                
+                return true;
+            }
+
+            isGateBlocking(fromX, fromY, toX, toY) {
+                for (const gate of this.gates) {
+                    if (this.isGateBetween(fromX, fromY, toX, toY, gate)) {
+                        // Check if robot has the key
+                        if (!this.robot.keys.includes(gate.color)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            isGateBetween(fromX, fromY, toX, toY, gate) {
+                const gateX = gate.x;
+                const gateY = gate.y;
+                
+                // Check if gate is at the target position
+                if (gateX === toX && gateY === toY) {
+                    return true;
+                }
+                
+                // Check if gate is between current and target
+                if ((gateX === fromX && gateY === toY) || (gateX === toX && gateY === fromY)) {
+                    return true;
+                }
+                
+                return false;
+            }
+
+            checkTileEffects() {
+                const cell = this.board[this.robot.y] && this.board[this.robot.y][this.robot.x];
+                if (!cell) return;
+                
+                switch (cell.type) {
+                    case 'reset':
+                        this.resetRobot();
+                        break;
+                    case 'key':
+                        // Find matching key and collect it
+                        const key = this.keys.find(k => k.x === this.robot.x && k.y === this.robot.y);
+                        if (key && !this.robot.keys.includes(key.color)) {
+                            this.robot.keys.push(key.color);
+                            // Remove key from board
+                            this.keys = this.keys.filter(k => !(k.x === this.robot.x && k.y === this.robot.y));
+                            this.drawBoard();
+                        }
+                        break;
+                }
+            }
+
+            resetRobot() {
+                this.robot.x = 0;
+                this.robot.y = 0;
+                this.robot.direction = 'East';
+                this.robot.keys = [];
+                this.drawBoard();
+            }
+        }
+
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new RobotGame();
+        });
+    </script>
+</body>
+</html>
