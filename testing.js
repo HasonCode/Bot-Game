@@ -104,11 +104,11 @@ class RobotTester {
             Object.values(editorLevels).forEach(level => {
                 convertedLevels[level.id] = {
                     title: level.name,
-                    description: level.description,
+                    description: level.description || 'No description provided',
                     par: level.par,
-                    board: level.boardData,
-                    startingCode: level.startingCode,
-                    difficulty: level.difficulty
+                    board: level.gridData,
+                    startingCode: level.startingCode || '# Write your robot code here\n# Example:\n# bot.move_forward()\n# bot.turn_right()',
+                    difficulty: level.difficulty || 'Beginner'
                 };
             });
             return convertedLevels;
@@ -431,7 +431,7 @@ else:
         if (!levelDef) return;
         
         this.currentLevel = selectedLevel;
-        this.loadBoardFromCSV(levelDef.board);
+        this.parseBoardCSV(levelDef.board);
         this.codeEditor.value = levelDef.startingCode;
         this.showLevelInfo(levelDef);
         this.resetRobot();
@@ -574,43 +574,30 @@ else:
         this.gates = [];
         this.keys = [];
         
-        const lines = csvData.split('\n');
-        let mode = 'board';
+        const lines = csvData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
         let maxX = 0, maxY = 0;
         
-        // First pass: find the maximum coordinates to determine grid size
-        for (let line of lines) {
-            line = line.trim();
-            if (!line || line.startsWith('#')) {
-                if (line.includes('Gates')) mode = 'gates';
-                else if (line.includes('Keys')) mode = 'keys';
-                continue;
-            }
+        // Parse the simplified CSV format: x,y,type,color
+        lines.forEach(line => {
+            const [x, y, type, color] = line.split(',').map(s => s.trim());
+            const xNum = parseInt(x);
+            const yNum = parseInt(y);
             
-            const parts = line.split(',');
-            if (mode === 'board' && parts.length >= 3) {
-                const x = parseInt(parts[0]);
-                const y = parseInt(parts[1]);
-                if (!isNaN(x) && !isNaN(y)) {
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                }
-            } else if (mode === 'gates' && parts.length >= 3) {
-                const x = parseInt(parts[1]);
-                const y = parseInt(parts[2]);
-                if (!isNaN(x) && !isNaN(y)) {
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                }
-            } else if (mode === 'keys' && parts.length >= 2) {
-                const x = parseInt(parts[1]);
-                const y = parseInt(parts[2]);
-                if (!isNaN(x) && !isNaN(y)) {
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                }
+            if (isNaN(xNum) || isNaN(yNum) || !type) return;
+            
+            maxX = Math.max(maxX, xNum);
+            maxY = Math.max(maxY, yNum);
+            
+            if (type === 'gate') {
+                this.gates.push({ x: xNum, y: yNum, color: color || '#000000' });
+            } else if (type === 'key') {
+                this.keys.push({ x: xNum, y: yNum, color: color || '#FFD700' });
+            } else {
+                // Regular board cell
+                if (!this.board[yNum]) this.board[yNum] = [];
+                this.board[yNum][xNum] = { type, color: color || '' };
             }
-        }
+        });
         
         // Auto-detect grid size (add 1 because coordinates are 0-based)
         const detectedSize = Math.max(maxX, maxY) + 1;
@@ -618,55 +605,6 @@ else:
             this.gridSize = detectedSize;
             this.gridSizeSelect.value = this.gridSize.toString();
             this.logOutput(`Auto-detected grid size: ${this.gridSize}x${this.gridSize}`, 'info');
-        }
-        
-        // Second pass: load the actual data
-        mode = 'board';
-        for (let line of lines) {
-            line = line.trim();
-            if (!line || line.startsWith('#')) {
-                if (line.includes('Gates')) mode = 'gates';
-                else if (line.includes('Keys')) mode = 'keys';
-                continue;
-            }
-            
-            const parts = line.split(',');
-            if (mode === 'board' && parts.length >= 3) {
-                const x = parseInt(parts[0]);
-                const y = parseInt(parts[1]);
-                if (x >= 0 && x < this.gridSize && y >= 0 && y < this.gridSize) {
-                    if (!this.board[y]) this.board[y] = [];
-                    this.board[y][x] = {
-                        type: parts[2] || 'normal',
-                        asset: parts[3] || null,
-                        customAsset: parts[4] || null
-                    };
-                }
-            } else if (mode === 'gates' && parts.length >= 3) {
-                const x = parseInt(parts[1]);
-                const y = parseInt(parts[2]);
-                if (x >= 0 && x < this.gridSize && y >= 0 && y < this.gridSize) {
-                    this.gates.push({
-                        id: `gate_${Date.now()}_${Math.random()}`,
-                        x: x,
-                        y: y,
-                        type: parts[3] || 'horizontal',
-                        color: parts[4] || '#8B4513',
-                        position: parts[5] || 'center'
-                    });
-                }
-            } else if (mode === 'keys' && parts.length >= 2) {
-                const x = parseInt(parts[1]);
-                const y = parseInt(parts[2]);
-                if (x >= 0 && x < this.gridSize && y >= 0 && y < this.gridSize) {
-                    this.keys.push({
-                        id: `key_${Date.now()}_${Math.random()}`,
-                        x: x,
-                        y: y,
-                        color: parts[3] || '#FFD700'
-                    });
-                }
-            }
         }
         
         // Find robot starting position (first normal tile or 0,0)

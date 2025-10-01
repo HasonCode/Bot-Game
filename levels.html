@@ -330,9 +330,11 @@
         </div>
     </div>
 
+    <script src="level-manager.js"></script>
     <script>
         class PlayerLevelViewer {
             constructor() {
+                this.levelManager = window.LevelManager;
                 this.levels = this.loadLevels();
                 this.playerProgress = this.loadPlayerProgress();
                 this.currentLevel = null;
@@ -352,13 +354,8 @@
             }
 
             loadLevels() {
-                const saved = localStorage.getItem('robotGameLevels');
-                if (saved) {
-                    const allLevels = JSON.parse(saved);
-                    // Return all levels for now (no published flag in new admin panel)
-                    return allLevels;
-                }
-                return {};
+                // Get all levels from the unified level manager
+                return this.levelManager.getAllLevels();
             }
 
             loadPlayerProgress() {
