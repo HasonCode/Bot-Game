@@ -405,6 +405,7 @@
             <a href="game.html" class="active">Play</a>
             <a href="testing.html">Testing</a>
             <a href="admin-levels.html">Admin</a>
+            <button id="refreshLevelsBtn" class="btn btn-secondary">🔄 Refresh</button>
         </nav>
     </header>
 
@@ -441,6 +442,7 @@
     <script>
         class RobotGame {
             constructor() {
+                this.levelManager = window.LevelManager;
                 this.levels = this.loadLevels();
                 this.playerProgress = this.loadPlayerProgress();
                 this.currentLevel = null;
@@ -457,6 +459,7 @@
                 this.initializeElements();
                 this.setupEventListeners();
                 this.renderLevelList();
+                this.checkForLevelParameter();
             }
 
             initializeElements() {
@@ -475,22 +478,21 @@
                 this.nextLevelBtn.addEventListener('click', () => this.nextLevel());
                 this.retryBtn.addEventListener('click', () => this.retryLevel());
                 this.closeCompletionBtn.addEventListener('click', () => this.hideCompletion());
+                document.getElementById('refreshLevelsBtn').addEventListener('click', () => this.refreshLevels());
             }
 
             loadLevels() {
-                const saved = localStorage.getItem('robotGameLevels');
-                if (saved) {
-                    const allLevels = JSON.parse(saved);
-                    // Only return published levels for players
-                    const publishedLevels = {};
-                    Object.values(allLevels).forEach(level => {
-                        if (level.published) {
-                            publishedLevels[level.id] = level;
-                        }
-                    });
-                    return publishedLevels;
+                if (!this.levelManager) {
+                    console.error('LevelManager not found!');
+                    return [];
                 }
-                return {};
+                return this.levelManager.getPublishedLevels();
+            }
+
+            refreshLevels() {
+                // Reload levels from LevelManager and refresh the UI
+                this.levels = this.loadLevels();
+                this.renderLevelList();
             }
 
             loadPlayerProgress() {
@@ -502,11 +504,24 @@
                 localStorage.setItem('playerProgress', JSON.stringify(this.playerProgress));
             }
 
+            checkForLevelParameter() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const levelId = urlParams.get('level');
+                if (levelId) {
+                    const level = this.levelManager.getLevel(levelId);
+                    if (level) {
+                        this.selectLevel(levelId);
+                    } else {
+                        alert('Level not found or has been deleted');
+                    }
+                }
+            }
+
             renderLevelList() {
                 this.levelList.innerHTML = '';
                 
                 // Sort levels by order
-                const sortedLevels = Object.values(this.levels).sort((a, b) => (a.order || 0) - (b.order || 0));
+                const sortedLevels = this.levels.sort((a, b) => (a.order || 0) - (b.order || 0));
                 
                 sortedLevels.forEach(level => {
                     const progress = this.playerProgress[level.id];
@@ -562,7 +577,7 @@
                 document.querySelector(`[data-level-id="${levelId}"]`).classList.add('active');
                 
                 this.currentLevelId = levelId;
-                this.currentLevel = this.levels[levelId];
+                this.currentLevel = this.levels.find(level => level.id == levelId);
                 this.renderGameArea();
             }
 
@@ -624,9 +639,17 @@
 
             initializeGame() {
                 const canvas = document.getElementById('gameCanvas');
-                this.gameBoard = new GameBoard(canvas, this.currentLevel.boardData);
+                
+                // Parse the grid data using LevelManager
+                const boardData = this.levelManager.parseGridCSV(this.currentLevel.gridData);
+                if (!boardData.valid) {
+                    alert('Error loading level: ' + boardData.errors.join(', '));
+                    return;
+                }
+                
+                this.gameBoard = new GameBoard(canvas, boardData);
                 this.robot = this.gameBoard.robot;
-                this.commands = this.parseCommands(this.currentLevel.startingCode);
+                this.commands = this.parseCommands(this.currentLevel.startingCode || '');
                 this.commandIndex = 0;
                 this.commandsUsed = 0;
                 this.isRunning = false;
@@ -1267,4 +1290,5 @@
         });
     </script>
 </body>
+    <script src="level-manager.js"></script>
 </html>

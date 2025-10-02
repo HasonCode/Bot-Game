@@ -294,6 +294,7 @@
             <a href="levels.html" class="active">Levels</a>
             <a href="testing.html">Testing</a>
             <a href="admin-levels.html">🔒 Admin</a>
+            <button id="refreshLevelsBtn" class="btn btn-secondary">🔄 Refresh</button>
         </nav>
     </header>
 
@@ -354,8 +355,15 @@
             }
 
             loadLevels() {
-                // Get all levels from the unified level manager
-                return this.levelManager.getAllLevels();
+                // Get published levels only (for players)
+                return this.levelManager.getPublishedLevels();
+            }
+
+            refreshLevels() {
+                // Reload levels from LevelManager and refresh the UI
+                this.levels = this.loadLevels();
+                this.renderLevelList();
+                this.updatePlayerStats();
             }
 
             loadPlayerProgress() {
@@ -537,13 +545,24 @@
             setupLevelDetailEvents() {
                 document.getElementById('playLevel').addEventListener('click', () => this.playLevel());
                 document.getElementById('viewCode').addEventListener('click', () => this.viewCode());
+                document.getElementById('refreshLevelsBtn').addEventListener('click', () => this.refreshLevels());
             }
 
             playLevel() {
-                // Open testing page with this level loaded
-                const levelData = JSON.stringify(this.currentLevel);
-                localStorage.setItem('testLevelData', levelData);
-                window.open('testing.html?level=' + this.currentLevelId, '_blank');
+                if (!this.currentLevel) {
+                    alert('No level selected');
+                    return;
+                }
+                
+                // Verify level still exists in LevelManager
+                const level = this.levelManager.getLevel(this.currentLevelId);
+                if (!level) {
+                    alert('Level not found or has been deleted');
+                    return;
+                }
+                
+                // Open game page with this level loaded
+                window.open('game.html?level=' + this.currentLevelId, '_blank');
             }
 
             viewCode() {

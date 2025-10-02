@@ -15,8 +15,8 @@ class RobotTester {
         this.closeHelpBtn = document.getElementById('closeHelp');
         
         // Level system elements
-        this.levelSelect = document.getElementById('levelSelect');
-        this.loadLevelBtn = document.getElementById('loadLevelBtn');
+        this.loadTestLevelBtn = document.getElementById('loadTestLevelBtn');
+        this.refreshLevelsBtn = document.getElementById('refreshLevelsBtn');
         this.levelInfo = document.getElementById('levelInfo');
         this.levelTitle = document.getElementById('levelTitle');
         this.levelDescription = document.getElementById('levelDescription');
@@ -31,7 +31,11 @@ class RobotTester {
         this.levelCompletion = JSON.parse(localStorage.getItem('levelCompletion') || '{}');
         
         // Initialize level manager
-        this.levelManager = window.LevelManager || new LevelManager();
+        this.levelManager = window.LevelManager;
+        if (!this.levelManager) {
+            console.error('LevelManager not found! Make sure level-manager.js is loaded first.');
+            this.logOutput('Error: LevelManager not found. Please refresh the page.', 'error');
+        }
         
         // Board data
         this.board = [];
@@ -58,38 +62,25 @@ class RobotTester {
         
         this.setupEventListeners();
         this.updateSpeedDisplay();
-        this.populateLevelSelector();
         this.checkForLevelParameter();
         this.drawEmptyBoard();
-    }
-
-    populateLevelSelector() {
-        // Clear existing options except custom
-        while (this.levelSelect.children.length > 1) {
-            this.levelSelect.removeChild(this.levelSelect.lastChild);
-        }
-        
-        // Add levels from level manager
-        const levels = this.levelManager.getAllLevels();
-        levels.forEach(level => {
-            const option = document.createElement('option');
-            option.value = level.id;
-            option.textContent = `${level.name} (Order: ${level.order})`;
-            this.levelSelect.appendChild(option);
-        });
     }
 
     checkForLevelParameter() {
         const urlParams = new URLSearchParams(window.location.search);
         const levelId = urlParams.get('level');
         if (levelId) {
-            this.levelSelect.value = levelId;
-            this.loadLevel();
+            this.loadLevel(levelId);
         }
     }
 
     // Level definitions (fallback if no levels from editor)
     getLevelDefinitions() {
+        if (!this.levelManager) {
+            this.logOutput('Error: LevelManager not available. Using fallback levels.', 'error');
+            return this.getFallbackLevels();
+        }
+        
         const editorLevels = this.levelManager.getAllLevels();
         if (editorLevels.length > 0) {
             // Convert editor format to testing format
@@ -101,6 +92,10 @@ class RobotTester {
         }
         
         // Fallback to default levels
+        return this.getFallbackLevels();
+    }
+
+    getFallbackLevels() {
         return {
             1: {
                 title: "Level 1: Simple Square",
@@ -262,8 +257,12 @@ for i in range(80):
         });
 
         // Level system
-        this.loadLevelBtn.addEventListener('click', () => {
-            this.loadLevel();
+        this.loadTestLevelBtn.addEventListener('click', () => {
+            this.loadTestLevel();
+        });
+
+        this.refreshLevelsBtn.addEventListener('click', () => {
+            this.refreshLevels();
         });
 
         // Help dropdown control
@@ -405,24 +404,48 @@ else:
     }
 
     // Level system methods
-    loadLevel() {
-        const selectedLevel = this.levelSelect.value;
-        
-        if (selectedLevel === 'custom') {
-            this.hideLevelInfo();
+    loadLevel(levelId = null) {
+        if (!levelId) {
+            // Load a test level for testing purposes
+            this.loadTestLevel();
             return;
         }
         
-        const levelDef = this.getLevelDefinitions()[selectedLevel];
-        if (!levelDef) return;
+        const levelDef = this.getLevelDefinitions()[levelId];
+        if (!levelDef) {
+            this.logOutput(`Level ${levelId} not found.`, 'error');
+            return;
+        }
         
-        this.currentLevel = selectedLevel;
+        this.currentLevel = levelId;
         this.parseBoardCSV(levelDef.board);
         this.codeEditor.value = levelDef.startingCode;
         this.showLevelInfo(levelDef);
         this.resetRobot();
         
         this.logOutput(`Loaded ${levelDef.title}`, 'success');
+    }
+
+    loadTestLevel() {
+        // Load the first available test level
+        const testLevels = this.getFallbackLevels();
+        const firstLevelId = Object.keys(testLevels)[0];
+        if (firstLevelId) {
+            this.loadLevel(firstLevelId);
+            this.logOutput('Loaded test level for testing purposes.', 'info');
+        } else {
+            this.logOutput('No test levels available.', 'error');
+        }
+    }
+
+    refreshLevels() {
+        // Refresh available levels from LevelManager
+        if (this.levelManager) {
+            const levels = this.levelManager.getAllLevels();
+            this.logOutput(`Refreshed: ${levels.length} levels available from admin panel.`, 'info');
+        } else {
+            this.logOutput('LevelManager not available for refresh.', 'error');
+        }
     }
 
     showLevelInfo(levelDef) {
@@ -555,6 +578,11 @@ else:
     }
 
     parseBoardCSV(csvData) {
+        if (!this.levelManager) {
+            this.logOutput('Error: LevelManager not available. Cannot parse grid data.', 'error');
+            return;
+        }
+        
         // Use the level manager to parse the CSV
         const parsedData = this.levelManager.parseGridCSV(csvData);
         

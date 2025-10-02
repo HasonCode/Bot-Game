@@ -412,6 +412,21 @@
                         <label for="levelPar">Par Score</label>
                         <input type="number" id="levelPar" placeholder="Par score" min="1">
                     </div>
+                    <div class="control-group">
+                        <label for="levelDifficulty">Difficulty</label>
+                        <select id="levelDifficulty">
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="Expert">Expert</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="levelPublished">
+                            <input type="checkbox" id="levelPublished">
+                            Published (visible to players)
+                        </label>
+                    </div>
                 </div>
                 
                 <div class="control-group">
@@ -422,10 +437,26 @@
                     </div>
                 </div>
 
+                <div class="control-group">
+                    <label for="levelStartingCode">Starting Code</label>
+                    <textarea id="levelStartingCode" placeholder="# Write your robot code here&#10;# Example:&#10;# bot.move_forward()&#10;# bot.turn_right()" rows="6"></textarea>
+                </div>
+
                 <div class="button-group" style="margin-top: 20px;">
                     <button id="saveLevelBtn" class="btn btn-success">💾 Save Level</button>
                     <button id="newLevelBtn" class="btn btn-primary">➕ New Level</button>
                     <button id="deleteLevelBtn" class="btn btn-danger">🗑️ Delete Level</button>
+                </div>
+
+                <!-- Error Display -->
+                <div id="errorDisplay" class="error-display" style="display: none; margin-top: 15px; padding: 10px; background: #ffebee; border: 1px solid #f44336; border-radius: 4px; color: #c62828;"></div>
+
+                <!-- Success Display -->
+                <div id="successDisplay" class="success-display" style="display: none; margin-top: 15px; padding: 10px; background: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px; color: #2e7d32;"></div>
+
+                <!-- Play Link -->
+                <div id="playLinkDisplay" class="play-link" style="display: none; margin-top: 15px; padding: 10px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px;">
+                    <strong>🎮 Play Link:</strong> <a id="playLink" href="#" target="_blank">game.html?level=</a>
                 </div>
             </div>
 
@@ -444,6 +475,9 @@
 
     <script src="level-manager.js"></script>
     <script>
+        // Bootstrap LevelManager
+        window.LevelManager = window.LevelManager || new LevelManager();
+        
         class AdminPanel {
             constructor() {
                 this.levelManager = window.LevelManager;
@@ -470,8 +504,17 @@
                 this.levelOrder = document.getElementById('levelOrder');
                 this.levelDescription = document.getElementById('levelDescription');
                 this.levelPar = document.getElementById('levelPar');
+                this.levelDifficulty = document.getElementById('levelDifficulty');
+                this.levelPublished = document.getElementById('levelPublished');
+                this.levelStartingCode = document.getElementById('levelStartingCode');
                 this.gridFile = document.getElementById('gridFile');
                 this.fileUpload = document.getElementById('fileUpload');
+
+                // Display elements
+                this.errorDisplay = document.getElementById('errorDisplay');
+                this.successDisplay = document.getElementById('successDisplay');
+                this.playLinkDisplay = document.getElementById('playLinkDisplay');
+                this.playLink = document.getElementById('playLink');
 
                 // Buttons
                 this.saveLevelBtn = document.getElementById('saveLevelBtn');
@@ -556,16 +599,94 @@
                 this.clearForm();
                 this.currentLevel = null;
                 this.updateLevelOrder();
+                this.hideMessages();
+            }
+
+            // Form binding methods
+            readForm() {
+                return {
+                    id: this.currentLevel?.id || undefined,
+                    name: this.levelName.value.trim(),
+                    description: this.levelDescription.value.trim(),
+                    order: Number(this.levelOrder.value) || 1,
+                    par: Number(this.levelPar.value) || 1,
+                    difficulty: this.levelDifficulty.value || 'Beginner',
+                    published: this.levelPublished.checked,
+                    gridData: this.currentGridData || '',
+                    startingCode: this.levelStartingCode.value.trim() || this.getDefaultStartingCode()
+                };
+            }
+
+            fillForm(level) {
+                this.currentLevel = level;
+                this.levelName.value = level.name || '';
+                this.levelDescription.value = level.description || '';
+                this.levelOrder.value = level.order || 1;
+                this.levelPar.value = level.par || 1;
+                this.levelDifficulty.value = level.difficulty || 'Beginner';
+                this.levelPublished.checked = level.published || false;
+                this.levelStartingCode.value = level.startingCode || this.getDefaultStartingCode();
+                
+                // Update grid data display
+                if (level.gridData) {
+                    this.currentGridData = level.gridData;
+                    this.fileUpload.innerHTML = `<p>✅ Grid data loaded (${this.getGridStats(level.gridData)})</p>`;
+                } else {
+                    this.currentGridData = '';
+                    this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
+                }
+                
+                this.hideMessages();
             }
 
             clearForm() {
+                this.currentLevel = null;
+                this.currentGridData = '';
                 this.levelName.value = '';
                 this.levelDescription.value = '';
+                this.levelOrder.value = '';
                 this.levelPar.value = '';
-                this.gridFile.value = '';
+                this.levelDifficulty.value = 'Beginner';
+                this.levelPublished.checked = false;
+                this.levelStartingCode.value = this.getDefaultStartingCode();
                 this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
-                this.setupFileUpload();
+                this.hideMessages();
             }
+
+            getDefaultStartingCode() {
+                return '# Write your robot code here\n# Example:\n# bot.move_forward()\n# bot.turn_right()';
+            }
+
+            getGridStats(gridData) {
+                if (!gridData) return 'No grid data';
+                const lines = gridData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
+                return `${lines.length} lines`;
+            }
+
+            showError(message) {
+                this.errorDisplay.textContent = message;
+                this.errorDisplay.style.display = 'block';
+                this.successDisplay.style.display = 'none';
+            }
+
+            showSuccess(message) {
+                this.successDisplay.textContent = message;
+                this.successDisplay.style.display = 'block';
+                this.errorDisplay.style.display = 'none';
+            }
+
+            hideMessages() {
+                this.errorDisplay.style.display = 'none';
+                this.successDisplay.style.display = 'none';
+                this.playLinkDisplay.style.display = 'none';
+            }
+
+            showPlayLink(levelId) {
+                this.playLink.href = `game.html?level=${levelId}`;
+                this.playLink.textContent = `game.html?level=${levelId}`;
+                this.playLinkDisplay.style.display = 'block';
+            }
+
 
             updateLevelOrder() {
                 const nextOrder = this.levelManager.getNextOrder();
