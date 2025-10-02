@@ -333,6 +333,9 @@
 
     <script src="level-manager.js"></script>
     <script>
+        // Bootstrap LevelManager
+        window.LevelManager = window.LevelManager || new LevelManager();
+        
         class PlayerLevelViewer {
             constructor() {
                 this.levelManager = window.LevelManager;
@@ -431,10 +434,15 @@
             renderLevelList() {
                 this.levelList.innerHTML = '';
                 
-                // Sort levels by order
-                const sortedLevels = this.levels.sort((a, b) => (a.order || 0) - (b.order || 0));
+                // Get published levels sorted by order
+                const publishedLevels = this.getPublishedSorted();
                 
-                sortedLevels.forEach(level => {
+                if (publishedLevels.length === 0) {
+                    this.levelList.innerHTML = '<div class="empty-state">No published levels yet.</div>';
+                    return;
+                }
+                
+                publishedLevels.forEach(level => {
                     const progress = this.playerProgress[level.id];
                     const levelElement = document.createElement('div');
                     levelElement.className = 'level-item';
@@ -459,7 +467,7 @@
                         <div class="level-info">
                             <div class="level-name">${level.name}</div>
                             <div class="level-details">
-                                Order: ${level.order} • Par: ${level.par}${bestScoreText}
+                                Par: ${level.par} • Order: ${level.order} • ${level.difficulty || 'Beginner'}${bestScoreText}
                             </div>
                         </div>
                         <div class="level-status">
@@ -467,9 +475,17 @@
                         </div>
                     `;
                     
-                    levelElement.addEventListener('click', () => this.selectLevel(level.id));
+                    levelElement.addEventListener('click', () => {
+                        window.location.href = `game.html?level=${level.id}`;
+                    });
                     this.levelList.appendChild(levelElement);
                 });
+            }
+
+            getPublishedSorted() {
+                return this.levelManager
+                    .getPublishedLevels()               // only published
+                    .sort((a, b) => (a.order || 0) - (b.order || 0)); // ascending
             }
 
             selectLevel(levelId) {
@@ -644,6 +660,13 @@
             window.recordLevelCompletion = (levelId, commandCount) => {
                 playerLevelViewer.recordLevelCompletion(levelId, commandCount);
             };
+            
+            // Live sync across tabs/windows: auto-refresh if Admin saves while Selector is open
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'robotGameLevels') {
+                    playerLevelViewer.refreshLevels();
+                }
+            });
         });
     </script>
 </body>

@@ -440,6 +440,9 @@
     </div>
 
     <script>
+        // Bootstrap LevelManager
+        window.LevelManager = window.LevelManager || new LevelManager();
+        
         class RobotGame {
             constructor() {
                 this.levelManager = window.LevelManager;
@@ -509,19 +512,30 @@
                 const levelId = urlParams.get('level');
                 if (levelId) {
                     const level = this.levelManager.getLevel(levelId);
-                    if (level) {
-                        this.selectLevel(levelId);
-                    } else {
-                        alert('Level not found or has been deleted');
+                    if (!level) {
+                        // Show friendly error UI
+                        this.gameContent.innerHTML = `
+                            <div class="error-state">
+                                <h3>Level Not Found</h3>
+                                <p>Level not found or has been removed.</p>
+                                <a href="levels.html" class="btn btn-primary">Back to Levels</a>
+                            </div>
+                        `;
+                        return;
                     }
+                    
+                    // Use saved content: metadata + CSV
+                    this.selectLevel(levelId);
                 }
             }
 
             renderLevelList() {
                 this.levelList.innerHTML = '';
                 
-                // Sort levels by order
-                const sortedLevels = this.levels.sort((a, b) => (a.order || 0) - (b.order || 0));
+                // Get published levels sorted by order
+                const sortedLevels = this.levelManager
+                    .getPublishedLevels()
+                    .sort((a, b) => (a.order || 0) - (b.order || 0));
                 
                 sortedLevels.forEach(level => {
                     const progress = this.playerProgress[level.id];
@@ -1286,7 +1300,14 @@
 
         // Initialize the game when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new RobotGame();
+            const game = new RobotGame();
+            
+            // Live sync across tabs/windows: auto-refresh if Admin saves while Game is open
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'robotGameLevels') {
+                    game.refreshLevels();
+                }
+            });
         });
     </script>
 </body>

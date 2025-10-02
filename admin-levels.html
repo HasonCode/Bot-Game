@@ -253,6 +253,24 @@
             cursor: pointer;
         }
 
+        .csv-input {
+            margin-top: 10px;
+        }
+
+        .csv-input textarea {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            resize: vertical;
+            min-height: 120px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .csv-input button {
+            margin-top: 8px;
+        }
+
         .levels-list {
             background: white;
             border-radius: 15px;
@@ -430,10 +448,15 @@
                 </div>
                 
                 <div class="control-group">
-                    <label>Grid Upload</label>
+                    <label>Grid Data</label>
                     <div class="file-upload" id="fileUpload">
                         <input type="file" id="gridFile" accept=".csv,.txt">
                         <p>📁 Click to upload grid CSV file</p>
+                    </div>
+                    <div class="csv-input">
+                        <label for="gridDataInput">Or paste CSV data directly:</label>
+                        <textarea id="gridDataInput" placeholder="x,y,type,color&#10;0,0,normal,&#10;1,0,obstacle,&#10;0,1,key,#FFD700" rows="8" style="width: 100%; font-family: monospace; font-size: 12px;"></textarea>
+                        <button type="button" id="validateCsvBtn" class="btn btn-sm btn-secondary">Validate CSV</button>
                     </div>
                 </div>
 
@@ -509,6 +532,8 @@
                 this.levelStartingCode = document.getElementById('levelStartingCode');
                 this.gridFile = document.getElementById('gridFile');
                 this.fileUpload = document.getElementById('fileUpload');
+                this.gridDataInput = document.getElementById('gridDataInput');
+                this.validateCsvBtn = document.getElementById('validateCsvBtn');
 
                 // Display elements
                 this.errorDisplay = document.getElementById('errorDisplay');
@@ -536,6 +561,10 @@
                 // File upload
                 this.fileUpload.addEventListener('click', () => this.gridFile.click());
                 this.gridFile.addEventListener('change', (e) => this.handleFileUpload(e));
+                
+                // CSV input validation
+                this.validateCsvBtn.addEventListener('click', () => this.validateCsvInput());
+                this.gridDataInput.addEventListener('input', () => this.updateCurrentGridData());
 
                 // Level management
                 this.saveLevelBtn.addEventListener('click', () => this.saveLevel());
@@ -630,9 +659,11 @@
                 // Update grid data display
                 if (level.gridData) {
                     this.currentGridData = level.gridData;
+                    this.gridDataInput.value = level.gridData;
                     this.fileUpload.innerHTML = `<p>✅ Grid data loaded (${this.getGridStats(level.gridData)})</p>`;
                 } else {
                     this.currentGridData = '';
+                    this.gridDataInput.value = '';
                     this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
                 }
                 
@@ -649,6 +680,7 @@
                 this.levelDifficulty.value = 'Beginner';
                 this.levelPublished.checked = false;
                 this.levelStartingCode.value = this.getDefaultStartingCode();
+                this.gridDataInput.value = '';
                 this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
                 this.hideMessages();
             }
@@ -687,6 +719,43 @@
                 this.playLinkDisplay.style.display = 'block';
             }
 
+            validateCsvInput() {
+                const csvData = this.gridDataInput.value.trim();
+                if (!csvData) {
+                    this.showError('Please enter CSV data to validate.');
+                    return;
+                }
+
+                try {
+                    const parsed = this.levelManager.parseGridCSV(csvData);
+                    
+                    // Validate the parsed data
+                    const errors = [];
+                    if (parsed.gridSize < 5 || parsed.gridSize > 20) {
+                        errors.push(`Grid size must be between 5x5 and 20x20, got ${parsed.gridSize}x${parsed.gridSize}`);
+                    }
+                    
+                    if (parsed.tileCount === 0) {
+                        errors.push('Grid must contain at least one tile');
+                    }
+                    
+                    if (errors.length === 0) {
+                        this.showSuccess(`✅ CSV Valid! Grid: ${parsed.gridSize}x${parsed.gridSize} | Tiles: ${parsed.tileCount} | Keys: ${parsed.keyCount} | Gates: ${parsed.gateCount}`);
+                        this.currentGridData = csvData;
+                        this.fileUpload.innerHTML = `<p>✅ CSV data validated successfully<br>Grid: ${parsed.gridSize}x${parsed.gridSize} | Tiles: ${parsed.tileCount} | Keys: ${parsed.keyCount} | Gates: ${parsed.gateCount}</p>`;
+                    } else {
+                        this.showError(`CSV validation failed: ${errors.join(', ')}`);
+                    }
+                } catch (error) {
+                    this.showError(`Invalid CSV format: ${error.message}`);
+                }
+            }
+
+            updateCurrentGridData() {
+                // Update currentGridData when user types in the CSV input
+                this.currentGridData = this.gridDataInput.value.trim();
+            }
+
 
             updateLevelOrder() {
                 const nextOrder = this.levelManager.getNextOrder();
@@ -705,14 +774,29 @@
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const csvContent = e.target.result;
-                        const validation = this.levelManager.validateGridCSV(csvContent);
-                        
-                        if (validation.valid) {
-                            this.fileUpload.innerHTML = `<p>✅ ${file.name} uploaded successfully<br>Grid: ${validation.gridSize}x${validation.gridSize} | Tiles: ${validation.tileCount} | Keys: ${validation.keyCount} | Gates: ${validation.gateCount}</p>`;
-                            this.gridData = csvContent;
-                        } else {
-                            this.fileUpload.innerHTML = `<p>❌ Invalid grid format:<br>${validation.errors.join('<br>')}</p>`;
-                            this.gridData = null;
+                        try {
+                            const parsed = this.levelManager.parseGridCSV(csvContent);
+                            
+                            // Validate the parsed data
+                            const errors = [];
+                            if (parsed.gridSize < 5 || parsed.gridSize > 20) {
+                                errors.push(`Grid size must be between 5x5 and 20x20, got ${parsed.gridSize}x${parsed.gridSize}`);
+                            }
+                            
+                            if (parsed.tileCount === 0) {
+                                errors.push('Grid must contain at least one tile');
+                            }
+                            
+                            if (errors.length === 0) {
+                                this.fileUpload.innerHTML = `<p>✅ ${file.name} uploaded successfully<br>Grid: ${parsed.gridSize}x${parsed.gridSize} | Tiles: ${parsed.tileCount} | Keys: ${parsed.keyCount} | Gates: ${parsed.gateCount}</p>`;
+                                this.currentGridData = csvContent;
+                            } else {
+                                this.fileUpload.innerHTML = `<p>❌ Invalid grid format:<br>${errors.join('<br>')}</p>`;
+                                this.currentGridData = '';
+                            }
+                        } catch (error) {
+                            this.fileUpload.innerHTML = `<p>❌ Invalid CSV format: ${error.message}</p>`;
+                            this.currentGridData = '';
                         }
                     };
                     reader.readAsText(file);
@@ -721,71 +805,90 @@
 
             saveLevel() {
                 if (!this.isAuthenticated) {
-                    alert('Please login first.');
+                    this.showError('Please login first.');
                     return;
                 }
 
-                const name = this.levelName.value.trim();
-                const order = parseInt(this.levelOrder.value);
-                const description = this.levelDescription.value.trim();
-                const par = parseInt(this.levelPar.value);
+                // Read form data
+                const data = this.readForm();
 
-                if (!name) {
-                    alert('Please enter a level name.');
+                // Validate required fields
+                if (!data.name) {
+                    this.showError('Level name is required.');
                     return;
                 }
 
-                if (!order || order < 1) {
-                    alert('Please enter a valid order number.');
+                if (!data.order || data.order < 1) {
+                    this.showError('Order must be a positive number.');
                     return;
                 }
 
-                if (!this.gridData && !this.currentLevel?.gridData) {
-                    alert('Please upload a grid CSV file.');
+                if (!data.gridData) {
+                    this.showError('Grid data is required.');
                     return;
                 }
 
-                const levelData = {
-                    id: this.currentLevel?.id,
-                    name,
-                    order,
-                    description,
-                    par: par || 10,
-                    gridData: this.gridData || this.currentLevel?.gridData || '',
-                    startingCode: this.currentLevel?.startingCode,
-                    difficulty: this.currentLevel?.difficulty,
-                    created: this.currentLevel?.created
-                };
-
-                // Validate the level
-                const validation = this.levelManager.validateLevel(levelData);
-                if (!validation.valid) {
-                    alert('Level validation failed:\n' + validation.errors.join('\n'));
-                    return;
-                }
-
-                // Check if order already exists for different level
-                const existingLevel = this.levelManager.getAllLevels().find(level => 
-                    level.order === order && level.id !== this.currentLevel?.id
-                );
-
-                if (existingLevel) {
-                    if (!confirm(`Order ${order} is already used by "${existingLevel.name}". Do you want to continue?`)) {
+                // Validate CSV early
+                if (data.gridData.trim()) {
+                    try {
+                        const parsed = this.levelManager.parseGridCSV(data.gridData);
+                        
+                        // Validate the parsed data
+                        const errors = [];
+                        if (parsed.gridSize < 5 || parsed.gridSize > 20) {
+                            errors.push(`Grid size must be between 5x5 and 20x20, got ${parsed.gridSize}x${parsed.gridSize}`);
+                        }
+                        
+                        if (parsed.tileCount === 0) {
+                            errors.push('Grid must contain at least one tile');
+                        }
+                        
+                        if (errors.length > 0) {
+                            this.showError(`Grid CSV invalid: ${errors.join(', ')}`);
+                            return;
+                        }
+                    } catch (e) {
+                        this.showError(`Grid CSV error: ${e.message}`);
                         return;
                     }
                 }
 
-                const savedLevel = this.currentLevel ? 
-                    this.levelManager.updateLevel(this.currentLevel.id, levelData) :
-                    this.levelManager.createLevel(levelData);
+                // Check if order already exists for different level
+                const existingLevel = this.levelManager.getAllLevels().find(level => 
+                    level.order === data.order && level.id !== data.id
+                );
 
-                if (savedLevel) {
-                    this.renderLevelsList();
-                    this.currentLevel = savedLevel;
-                    alert('Level saved successfully!');
-                } else {
-                    alert('Error saving level. Please try again.');
+                if (existingLevel) {
+                    this.showError(`Order ${data.order} is already used by "${existingLevel.name}". Please choose a different order.`);
+                    return;
                 }
+
+                // Save the level
+                let savedLevel;
+                if (data.id && this.levelManager.getLevel(data.id)) {
+                    savedLevel = this.levelManager.updateLevel(data.id, data);
+                } else {
+                    savedLevel = this.levelManager.createLevel(data);
+                }
+
+                if (!savedLevel) {
+                    this.showError('Failed to save level.');
+                    return;
+                }
+
+                // Optional: extra validation
+                const validation = this.levelManager.validateLevel(savedLevel);
+                if (!validation.valid) {
+                    this.showError('Level validation failed: ' + validation.errors.join(', '));
+                    return;
+                }
+
+                // Persist & refresh
+                this.levelManager.saveLevels();
+                this.renderLevelsList();
+                this.fillForm(savedLevel); // Update form with saved data
+                this.showSuccess('Level saved successfully!');
+                this.showPlayLink(savedLevel.id);
             }
 
             deleteLevel() {
@@ -811,25 +914,12 @@
             }
 
             selectLevel(level) {
-                this.currentLevel = level;
-                this.levelName.value = level.name;
-                this.levelOrder.value = level.order;
-                this.levelDescription.value = level.description;
-                this.levelPar.value = level.par;
-                
-                if (level.gridData) {
-                    this.fileUpload.innerHTML = `<p>✅ Grid data loaded</p>`;
-                    this.gridData = level.gridData;
-                } else {
-                    this.fileUpload.innerHTML = '<input type="file" id="gridFile" accept=".csv,.txt"><p>📁 Click to upload grid CSV file</p>';
-                    this.setupFileUpload();
-                }
-
+                this.fillForm(level);
                 this.renderLevelsList();
             }
 
             renderLevelsList() {
-                const levelsArray = this.levelManager.getAllLevels();
+                const levelsArray = this.levelManager.getAllLevels().sort((a, b) => (a.order || 0) - (b.order || 0));
                 
                 if (levelsArray.length === 0) {
                     this.levelsList.innerHTML = `
@@ -842,20 +932,51 @@
                 }
 
                 this.levelsList.innerHTML = levelsArray.map(level => `
-                    <div class="level-item ${this.currentLevel?.id === level.id ? 'selected' : ''}" 
-                         onclick="adminPanel.selectLevel(${JSON.stringify(level).replace(/"/g, '&quot;')})">
+                    <div class="level-item ${this.currentLevel?.id === level.id ? 'selected' : ''}">
                         <div class="level-header">
                             <div class="level-name">${level.name}</div>
                             <div class="level-order">Order: ${level.order}</div>
+                            <div class="level-badges">
+                                ${level.published ? '<span class="badge published">Published</span>' : '<span class="badge draft">Draft</span>'}
+                                <span class="badge difficulty">${level.difficulty || 'Beginner'}</span>
+                            </div>
                         </div>
                         <div class="level-info">
                             <div><strong>Par:</strong> ${level.par}</div>
-                            <div><strong>Created:</strong> ${new Date(level.created).toLocaleDateString()}</div>
-                            <div><strong>Updated:</strong> ${new Date(level.updated).toLocaleDateString()}</div>
+                            <div><strong>Created:</strong> ${new Date(level.created || Date.now()).toLocaleDateString()}</div>
+                            <div><strong>Updated:</strong> ${new Date(level.updated || Date.now()).toLocaleDateString()}</div>
                         </div>
                         ${level.description ? `<p style="margin-top: 10px; color: #4a5568;">${level.description}</p>` : ''}
+                        <div class="level-actions">
+                            <button class="btn btn-sm btn-primary" onclick="adminPanel.editLevel('${level.id}')">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="adminPanel.deleteLevelById('${level.id}')">Delete</button>
+                        </div>
                     </div>
                 `).join('');
+            }
+
+            editLevel(levelId) {
+                const level = this.levelManager.getLevel(levelId);
+                if (level) {
+                    this.fillForm(level);
+                }
+            }
+
+            deleteLevelById(levelId) {
+                const level = this.levelManager.getLevel(levelId);
+                if (!level) return;
+                
+                if (confirm(`Are you sure you want to delete "${level.name}"?`)) {
+                    if (this.levelManager.deleteLevel(levelId)) {
+                        this.renderLevelsList();
+                        if (this.currentLevel?.id === levelId) {
+                            this.newLevel();
+                        }
+                        this.showSuccess('Level deleted successfully!');
+                    } else {
+                        this.showError('Error deleting level. Please try again.');
+                    }
+                }
             }
         }
 
