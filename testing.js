@@ -584,10 +584,22 @@ else:
         }
         
         // Use the level manager to parse the CSV
-        const parsedData = this.levelManager.parseGridCSV(csvData);
-        
-        if (!parsedData.valid) {
-            this.logOutput(`Error parsing grid: ${parsedData.errors.join(', ')}`, 'error');
+        let parsedData;
+        try {
+            parsedData = this.levelManager.parseGridCSV(csvData);
+            
+            // Validate the parsed data
+            if (parsedData.gridSize < 5 || parsedData.gridSize > 20) {
+                this.logOutput(`Error parsing grid: Grid size ${parsedData.gridSize}x${parsedData.gridSize} is invalid (must be 5x5 to 20x20)`, 'error');
+                return;
+            }
+            
+            if (parsedData.tileCount === 0) {
+                this.logOutput('Error parsing grid: No tiles found in grid data', 'error');
+                return;
+            }
+        } catch (error) {
+            this.logOutput(`Error parsing grid: ${error.message}`, 'error');
             return;
         }
         

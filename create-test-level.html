@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test Level</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 5px; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .success { color: green; margin: 10px 0; }
+        .error { color: red; margin: 10px 0; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Create Test Level</h1>
+    <p>This will create a simple test level to verify the level system works correctly.</p>
+    
+    <button onclick="createTestLevel()">Create Test Level</button>
+    <button onclick="checkLevels()">Check Levels</button>
+    <button onclick="goToGame()">Go to Game</button>
+    <button onclick="goToLevels()">Go to Levels</button>
+    
+    <div id="output"></div>
+
+    <script src="level-manager.js"></script>
+    <script>
+        const levelManager = new LevelManager();
+        
+        function createTestLevel() {
+            try {
+                const testLevelData = {
+                    name: "Test Level 1",
+                    description: "A simple test level to verify the system works correctly",
+                    order: 1,
+                    par: 5,
+                    difficulty: "Beginner",
+                    published: true,
+                    gridData: `0,0,normal,
+1,0,normal,
+2,0,obstacle,
+0,1,normal,
+1,1,key,#FFD700,
+2,1,normal,
+0,2,normal,
+1,2,normal,
+2,2,ending,`,
+                    startingCode: `# Test level starting code
+# Try to reach the ending tile in 5 moves or fewer
+bot.move_forward()
+bot.turn_right()
+bot.move_forward()
+bot.turn_right()
+bot.move_forward()`
+                };
+                
+                const savedLevel = levelManager.createLevel(testLevelData);
+                document.getElementById('output').innerHTML = `
+                    <div class="success">✅ Successfully created test level!</div>
+                    <p><strong>Level Name:</strong> ${savedLevel.name}</p>
+                    <p><strong>Level ID:</strong> ${savedLevel.id}</p>
+                    <p><strong>Description:</strong> ${savedLevel.description}</p>
+                    <p><strong>Par Score:</strong> ${savedLevel.par}</p>
+                    <p><strong>Published:</strong> ${savedLevel.published ? 'Yes' : 'No'}</p>
+                    <p><a href="game.html?level=${savedLevel.id}" target="_blank">🎮 Play this level</a></p>
+                    <p><a href="levels.html" target="_blank">📚 View all levels</a></p>
+                `;
+            } catch (error) {
+                document.getElementById('output').innerHTML = `
+                    <div class="error">❌ Error creating test level: ${error.message}</div>
+                `;
+            }
+        }
+        
+        function checkLevels() {
+            try {
+                const allLevels = levelManager.getAllLevels();
+                const publishedLevels = levelManager.getPublishedLevels();
+                
+                document.getElementById('output').innerHTML = `
+                    <div class="success">📊 Level Statistics</div>
+                    <p><strong>Total Levels:</strong> ${allLevels.length}</p>
+                    <p><strong>Published Levels:</strong> ${publishedLevels.length}</p>
+                    ${allLevels.length > 0 ? `
+                        <h3>All Levels:</h3>
+                        <pre>${JSON.stringify(allLevels, null, 2)}</pre>
+                    ` : '<p>No levels found.</p>'}
+                `;
+            } catch (error) {
+                document.getElementById('output').innerHTML = `
+                    <div class="error">❌ Error checking levels: ${error.message}</div>
+                `;
+            }
+        }
+        
+        function goToGame() {
+            window.open('game.html', '_blank');
+        }
+        
+        function goToLevels() {
+            window.open('levels.html', '_blank');
+        }
+        
+        // Auto-check levels on page load
+        window.onload = function() {
+            checkLevels();
+        };
+    </script>
+</body>
+</html>

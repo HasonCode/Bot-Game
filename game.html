@@ -56,11 +56,11 @@
         }
 
         .main-container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 2rem auto;
             padding: 0 2rem;
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: 300px 1fr 400px;
             gap: 2rem;
         }
 
@@ -77,6 +77,146 @@
             border-radius: 10px;
             padding: 1.5rem;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            background: #f8f9fa;
+            margin-bottom: 1rem;
+        }
+
+        .code-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .code-controls .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .help-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .help-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .help-btn:hover {
+            background: #F57C00;
+        }
+
+        .help-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 350px;
+            max-width: 400px;
+            display: none;
+        }
+
+        .help-content {
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .help-content h4 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 0.5rem;
+        }
+
+        .command-section {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+            font-size: 0.9rem;
+        }
+
+        .command-section code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            display: inline-block;
+            margin: 2px 0;
+        }
+
+        .example-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #45a049;
+        }
+
+        .close-help-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+
+        .close-help-btn:hover {
+            background: #c82333;
         }
 
         .section-title {
@@ -394,6 +534,10 @@
             .control-group {
                 justify-content: center;
             }
+
+            .code-panel {
+                order: 3;
+            }
         }
     </style>
 </head>
@@ -425,6 +569,80 @@
                 </div>
             </div>
         </div>
+
+        <div class="code-panel">
+            <h2 class="section-title">Code Editor</h2>
+            <div class="code-controls">
+                <button class="btn btn-primary" id="runCodeBtn">▶ Run Code</button>
+                <button class="btn btn-warning" id="resetCodeBtn">🔄 Reset</button>
+                <button class="btn btn-secondary" id="saveCodeBtn">💾 Save</button>
+                <div class="help-container">
+                    <button class="help-btn" id="helpBtn">❓ Help</button>
+                    <div class="help-dropdown" id="helpDropdown">
+                        <div class="help-content">
+                            <h4>Robot Commands</h4>
+                            <div class="command-section">
+                                <strong>Movement Commands:</strong><br>
+                                <code>bot.move_forward()</code> - Move one tile forward<br>
+                                <code>bot.move_backward()</code> - Move one tile backward<br>
+                                <code>bot.turn_left()</code> - Turn 90° left<br>
+                                <code>bot.turn_right()</code> - Turn 90° right<br>
+                                <code>bot.can_move()</code> - Returns true if can move forward
+                            </div>
+                            <div class="command-section">
+                                <strong>Robot Properties:</strong><br>
+                                <code>bot.x</code> - Current X position<br>
+                                <code>bot.y</code> - Current Y position<br>
+                                <code>bot.direction</code> - Current direction<br>
+                                <code>bot.keys</code> - Number of keys collected
+                            </div>
+                            <div class="command-section">
+                                <strong>Python Loops & Conditionals:</strong><br>
+                                <code>for i in range(3):</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.move_forward()</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.turn_right()</code><br><br>
+                                <code>if bot.can_move():</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.move_forward()</code><br>
+                                <code>else:</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.turn_left()</code>
+                            </div>
+                            <div class="command-section">
+                                <strong>Example Programs:</strong>
+                                <div class="example-buttons">
+                                    <button class="example-btn" data-code="square">Square</button>
+                                    <button class="example-btn" data-code="spiral">Spiral</button>
+                                    <button class="example-btn" data-code="maze">Maze</button>
+                                </div>
+                            </div>
+                            <button class="close-help-btn" id="closeHelpBtn">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <textarea id="codeEditor" class="code-editor" placeholder="Enter your robot commands here...
+
+Example:
+# Robot movement commands
+bot.move_forward()
+bot.turn_left()
+bot.move_forward()
+
+# Python loops supported
+for i in range(3):
+    bot.move_forward()
+    bot.turn_right()
+
+# Comments with #
+if bot.can_move():
+    bot.move_forward()
+
+# Use Tab for indentation"></textarea>
+            
+            <div id="codeStatus" style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">
+                Ready to code...
+            </div>
+        </div>
     </div>
 
     <!-- Completion Message Modal -->
@@ -439,6 +657,7 @@
         </div>
     </div>
 
+    <script src="level-manager.js"></script>
     <script>
         // Bootstrap LevelManager
         window.LevelManager = window.LevelManager || new LevelManager();
@@ -475,6 +694,16 @@
                 this.nextLevelBtn = document.getElementById('nextLevelBtn');
                 this.retryBtn = document.getElementById('retryBtn');
                 this.closeCompletionBtn = document.getElementById('closeCompletionBtn');
+                
+                // Code editor elements
+                this.codeEditor = document.getElementById('codeEditor');
+                this.codeStatus = document.getElementById('codeStatus');
+                this.runCodeBtn = document.getElementById('runCodeBtn');
+                this.resetCodeBtn = document.getElementById('resetCodeBtn');
+                this.saveCodeBtn = document.getElementById('saveCodeBtn');
+                this.helpBtn = document.getElementById('helpBtn');
+                this.helpDropdown = document.getElementById('helpDropdown');
+                this.closeHelpBtn = document.getElementById('closeHelpBtn');
             }
 
             setupEventListeners() {
@@ -482,6 +711,42 @@
                 this.retryBtn.addEventListener('click', () => this.retryLevel());
                 this.closeCompletionBtn.addEventListener('click', () => this.hideCompletion());
                 document.getElementById('refreshLevelsBtn').addEventListener('click', () => this.refreshLevels());
+                
+                // Code editor event listeners
+                this.runCodeBtn.addEventListener('click', () => this.runCode());
+                this.resetCodeBtn.addEventListener('click', () => this.resetCode());
+                this.saveCodeBtn.addEventListener('click', () => this.saveCode());
+                this.helpBtn.addEventListener('click', () => this.toggleHelp());
+                this.closeHelpBtn.addEventListener('click', () => this.hideHelp());
+                
+                // Example button event listeners
+                document.querySelectorAll('.example-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const codeType = e.target.dataset.code;
+                        this.loadExampleCode(codeType);
+                    });
+                });
+                
+                // Close help dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!this.helpBtn.contains(e.target) && !this.helpDropdown.contains(e.target)) {
+                        this.hideHelp();
+                    }
+                });
+                
+                // Tab indentation support for code editor
+                this.codeEditor.addEventListener('keydown', (e) => {
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const start = this.codeEditor.selectionStart;
+                        const end = this.codeEditor.selectionEnd;
+                        const value = this.codeEditor.value;
+                        const newValue = value.substring(0, start) + '    ' + value.substring(end);
+                        this.codeEditor.value = newValue;
+                        const newPosition = start + 4;
+                        this.codeEditor.setSelectionRange(newPosition, newPosition);
+                    }
+                });
             }
 
             loadLevels() {
@@ -511,20 +776,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const levelId = urlParams.get('level');
                 if (levelId) {
-                    const level = this.levelManager.getLevel(levelId);
-                    if (!level) {
-                        // Show friendly error UI
-                        this.gameContent.innerHTML = `
-                            <div class="error-state">
-                                <h3>Level Not Found</h3>
-                                <p>Level not found or has been removed.</p>
-                                <a href="levels.html" class="btn btn-primary">Back to Levels</a>
-                            </div>
-                        `;
-                        return;
-                    }
-                    
-                    // Use saved content: metadata + CSV
+                    // Try to load the level
                     this.selectLevel(levelId);
                 }
             }
@@ -588,10 +840,28 @@
                 });
                 
                 // Add active class to selected item
-                document.querySelector(`[data-level-id="${levelId}"]`).classList.add('active');
+                const levelElement = document.querySelector(`[data-level-id="${levelId}"]`);
+                if (levelElement) {
+                    levelElement.classList.add('active');
+                }
                 
                 this.currentLevelId = levelId;
-                this.currentLevel = this.levels.find(level => level.id == levelId);
+                // Try to find level in this.levels first, then fallback to LevelManager
+                this.currentLevel = this.levels.find(level => level.id == levelId) || 
+                                  this.levelManager.getLevel(levelId);
+                
+                if (!this.currentLevel) {
+                    console.error('Level not found:', levelId);
+                    this.gameContent.innerHTML = `
+                        <div class="empty-state">
+                            <h3>Level Not Found</h3>
+                            <p>Level with ID "${levelId}" could not be found.</p>
+                            <button onclick="location.href='levels.html'" class="btn btn-primary">Back to Levels</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
                 this.renderGameArea();
             }
 
@@ -611,7 +881,7 @@
                                 <div class="stat-label">Difficulty</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-value">${this.commandsUsed}</div>
+                                <div class="stat-value" id="commandsUsedDisplay">${this.commandsUsed}</div>
                                 <div class="stat-label">Commands Used</div>
                             </div>
                         </div>
@@ -642,6 +912,7 @@
                 
                 this.setupGameControls();
                 this.initializeGame();
+                this.loadStartingCode();
             }
 
             setupGameControls() {
@@ -655,9 +926,22 @@
                 const canvas = document.getElementById('gameCanvas');
                 
                 // Parse the grid data using LevelManager
-                const boardData = this.levelManager.parseGridCSV(this.currentLevel.gridData);
-                if (!boardData.valid) {
-                    alert('Error loading level: ' + boardData.errors.join(', '));
+                let boardData;
+                try {
+                    boardData = this.levelManager.parseGridCSV(this.currentLevel.gridData);
+                    
+                    // Validate the parsed data
+                    if (boardData.gridSize < 5 || boardData.gridSize > 20) {
+                        alert(`Error loading level: Grid size ${boardData.gridSize}x${boardData.gridSize} is invalid (must be 5x5 to 20x20)`);
+                        return;
+                    }
+                    
+                    if (boardData.tileCount === 0) {
+                        alert('Error loading level: No tiles found in grid data');
+                        return;
+                    }
+                } catch (error) {
+                    alert('Error loading level: ' + error.message);
                     return;
                 }
                 
@@ -828,11 +1112,16 @@
                     // Check for level completion
                     if (this.checkLevelCompletion()) {
                         this.completeLevel();
+                        this.updateCodeStatus(`Level completed in ${this.commandsUsed} commands!`);
                         break;
                     }
                     
                     // Small delay for visualization
                     await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                if (this.commandIndex >= this.commands.length && !this.checkLevelCompletion()) {
+                    this.updateCodeStatus(`Code finished in ${this.commandsUsed} commands (not completed)`);
                 }
                 
                 this.isRunning = false;
@@ -1006,7 +1295,7 @@
 
             updateProgress() {
                 const progressFill = document.getElementById('progressFill');
-                const commandsUsedEl = document.querySelector('.stat-value');
+                const commandsUsedEl = document.getElementById('commandsUsedDisplay');
                 
                 if (progressFill) {
                     const progress = Math.min((this.commandIndex / this.commands.length) * 100, 100);
@@ -1017,6 +1306,118 @@
                     commandsUsedEl.textContent = this.commandsUsed;
                 }
             }
+
+            // Code editor methods
+            loadStartingCode() {
+                if (this.currentLevel && this.currentLevel.startingCode) {
+                    this.codeEditor.value = this.currentLevel.startingCode;
+                    this.updateCodeStatus('Starting code loaded');
+                } else {
+                    this.codeEditor.value = '# Enter your robot commands here\nbot.move_forward()\nbot.turn_right()';
+                    this.updateCodeStatus('Ready to code...');
+                }
+            }
+
+            runCode() {
+                if (this.isRunning) {
+                    this.updateCodeStatus('Code is already running!');
+                    return;
+                }
+
+                const code = this.codeEditor.value.trim();
+                if (!code) {
+                    this.updateCodeStatus('Please enter some robot commands!');
+                    return;
+                }
+
+                this.updateCodeStatus('Running code...');
+                
+                // Parse and set the new commands
+                this.commands = this.parseCommands(code);
+                this.commandIndex = 0;
+                this.commandsUsed = 0;
+                
+                // Start the game
+                this.playGame();
+            }
+
+            resetCode() {
+                this.stopGame();
+                this.loadStartingCode();
+                this.updateCodeStatus('Code reset to starting code');
+            }
+
+            saveCode() {
+                const code = this.codeEditor.value;
+                const blob = new Blob([code], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `level_${this.currentLevelId}_code.txt`;
+                link.click();
+                URL.revokeObjectURL(url);
+                this.updateCodeStatus('Code saved successfully!');
+            }
+
+            updateCodeStatus(message) {
+                this.codeStatus.textContent = message;
+            }
+
+            toggleHelp() {
+                if (this.helpDropdown.style.display === 'none' || this.helpDropdown.style.display === '') {
+                    this.showHelp();
+                } else {
+                    this.hideHelp();
+                }
+            }
+
+            showHelp() {
+                this.helpDropdown.style.display = 'block';
+                this.helpBtn.style.background = '#F57C00';
+            }
+
+            hideHelp() {
+                this.helpDropdown.style.display = 'none';
+                this.helpBtn.style.background = '#FF9800';
+            }
+
+            loadExampleCode(codeType) {
+                let code = '';
+                
+                switch (codeType) {
+                    case 'square':
+                        code = `# Square movement pattern
+for i in range(4):
+    if bot.can_move():
+        bot.move_forward()
+    bot.turn_right()`;
+                        break;
+                    case 'spiral':
+                        code = `# Spiral pattern
+for i in range(4):
+    for j in range(i + 1):
+        if bot.can_move():
+            bot.move_forward()
+    bot.turn_right()`;
+                        break;
+                    case 'maze':
+                        code = `# Maze navigation
+for i in range(20):
+    if bot.can_move():
+        bot.move_forward()
+    else:
+        bot.turn_right()
+        if bot.can_move():
+            bot.move_forward()`;
+                        break;
+                }
+                
+                if (code) {
+                    this.codeEditor.value = code;
+                    this.updateCodeStatus(`Loaded ${codeType} example code`);
+                    this.hideHelp();
+                }
+            }
         }
 
         // Game Board Class
@@ -1024,7 +1425,7 @@
             constructor(canvas, boardData) {
                 this.canvas = canvas;
                 this.ctx = canvas.getContext('2d');
-                this.boardData = this.parseBoardCSV(boardData);
+                this.boardData = boardData; // boardData is already parsed by LevelManager
                 this.board = this.boardData.board;
                 this.gates = this.boardData.gates;
                 this.keys = this.boardData.keys;
@@ -1043,34 +1444,27 @@
                     can_move: () => this.canMoveForward()
                 };
                 
+                this.findRobotStartPosition();
                 this.drawBoard();
             }
 
-            parseBoardCSV(csvData) {
-                const lines = csvData.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-                const board = [];
-                const gates = [];
-                const keys = [];
-                let gridSize = 0;
-                
-                lines.forEach(line => {
-                    const [x, y, type, color] = line.split(',').map(s => s.trim());
-                    if (type && type !== 'gate' && type !== 'key') {
-                        const xNum = parseInt(x);
-                        const yNum = parseInt(y);
-                        gridSize = Math.max(gridSize, xNum + 1, yNum + 1);
-                        
-                        if (!board[yNum]) board[yNum] = [];
-                        board[yNum][xNum] = { type, color };
-                    } else if (type === 'key') {
-                        keys.push({ x: parseInt(x), y: parseInt(y), color });
-                    } else if (type === 'gate') {
-                        gates.push({ x: parseInt(x), y: parseInt(y), color });
+            findRobotStartPosition() {
+                // Look for a normal tile to place the robot
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        const cell = this.board[y] && this.board[y][x];
+                        if (cell && cell.type === 'normal') {
+                            this.robot.x = x;
+                            this.robot.y = y;
+                            return;
+                        }
                     }
-                });
-                
-                return { board, gates, keys, gridSize };
+                }
+                // Fallback to 0,0 if no normal tile found
+                this.robot.x = 0;
+                this.robot.y = 0;
             }
+
 
             drawBoard() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1311,5 +1705,4 @@
         });
     </script>
 </body>
-    <script src="level-manager.js"></script>
 </html>
