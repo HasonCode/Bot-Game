@@ -440,6 +440,15 @@
                         </select>
                     </div>
                     <div class="control-group">
+                        <label for="robotOrientation">Initial Robot Orientation</label>
+                        <select id="robotOrientation">
+                            <option value="east">East (→)</option>
+                            <option value="north">North (↑)</option>
+                            <option value="west">West (←)</option>
+                            <option value="south">South (↓)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
                         <label for="levelPublished">
                             <input type="checkbox" id="levelPublished">
                             Published (visible to players)
@@ -528,6 +537,7 @@
                 this.levelDescription = document.getElementById('levelDescription');
                 this.levelPar = document.getElementById('levelPar');
                 this.levelDifficulty = document.getElementById('levelDifficulty');
+                this.robotOrientation = document.getElementById('robotOrientation');
                 this.levelPublished = document.getElementById('levelPublished');
                 this.levelStartingCode = document.getElementById('levelStartingCode');
                 this.gridFile = document.getElementById('gridFile');
@@ -640,6 +650,7 @@
                     order: Number(this.levelOrder.value) || 1,
                     par: Number(this.levelPar.value) || 1,
                     difficulty: this.levelDifficulty.value || 'Beginner',
+                    robotOrientation: this.robotOrientation.value || 'east',
                     published: this.levelPublished.checked,
                     gridData: this.currentGridData || '',
                     startingCode: this.levelStartingCode.value.trim() || this.getDefaultStartingCode()
@@ -653,6 +664,7 @@
                 this.levelOrder.value = level.order || 1;
                 this.levelPar.value = level.par || 1;
                 this.levelDifficulty.value = level.difficulty || 'Beginner';
+                this.robotOrientation.value = level.robotOrientation || 'east';
                 this.levelPublished.checked = level.published || false;
                 this.levelStartingCode.value = level.startingCode || this.getDefaultStartingCode();
                 

@@ -48,6 +48,7 @@ class LevelManager {
             par: data.par || 10,
             gridData: data.gridData || '',
             startingCode: data.startingCode || this.getDefaultStartingCode(levelId),
+            robotOrientation: data.robotOrientation || 'east',
             difficulty: data.difficulty || 'Beginner',
             created: data.created || Date.now(),
             updated: Date.now(),

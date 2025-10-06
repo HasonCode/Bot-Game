@@ -603,8 +603,15 @@
                                 <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.turn_right()</code><br><br>
                                 <code>if bot.can_move():</code><br>
                                 <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.move_forward()</code><br>
+                                <code>elif bot.x > 5:</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.turn_left()</code><br>
                                 <code>else:</code><br>
-                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.turn_left()</code>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;bot.turn_right()</code><br><br>
+                                <code># Variables and nesting supported</code><br>
+                                <code>steps = 4</code><br>
+                                <code>for step in range(steps):</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;if step % 2 == 0:</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.move_forward()</code>
                             </div>
                             <div class="command-section">
                                 <strong>Example Programs:</strong>
@@ -626,16 +633,22 @@ Example:
 # Robot movement commands
 bot.move_forward()
 bot.turn_left()
-bot.move_forward()
 
-# Python loops supported
-for i in range(3):
-    bot.move_forward()
-    bot.turn_right()
+# Python loops and conditionals
+for i in range(4):
+    if bot.can_move():
+        bot.move_forward()
+    elif bot.x > 3:
+        bot.turn_left()
+    else:
+        bot.turn_right()
 
-# Comments with #
-if bot.can_move():
+# Variables and nested structures
+steps = 2
+for step in range(steps):
     bot.move_forward()
+    if step == 0:
+        bot.turn_right()
 
 # Use Tab for indentation"></textarea>
             
@@ -905,9 +918,6 @@ if bot.can_move():
                         </div>
                     </div>
                     
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                    </div>
                 `;
                 
                 this.setupGameControls();
@@ -959,6 +969,7 @@ if bot.can_move():
             parseCommands(code) {
                 const commands = [];
                 const lines = code.split('\n');
+                const variables = {}; // Track variables
 
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
@@ -966,15 +977,24 @@ if bot.can_move():
 
                     if (!trimmedLine || trimmedLine.startsWith('#')) continue;
 
+                    // Handle variable assignments
+                    if (trimmedLine.includes('=') && !trimmedLine.includes('==') && !trimmedLine.includes('!=')) {
+                        const result = this.parseVariableAssignment(trimmedLine, variables);
+                        if (result.commands.length > 0) {
+                            commands.push(...result.commands);
+                        }
+                        continue;
+                    }
+
                     // Handle control structures FIRST (if, for loops)
-                    if (trimmedLine.includes('for i in range(')) {
-                        const result = this.parseForLoop(lines, i);
+                    if (trimmedLine.includes('for ') && trimmedLine.includes(' in range(')) {
+                        const result = this.parseForLoop(lines, i, variables);
                         commands.push(...result.commands);
                         i = result.nextIndex - 1; // -1 because loop will increment
                     }
                     // Handle if statements with proper conditional evaluation
                     else if (trimmedLine.startsWith('if ')) {
-                        const result = this.parseIfStatement(lines, i);
+                        const result = this.parseIfStatement(lines, i, variables);
                         commands.push(...result.commands);
                         i = result.nextIndex - 1; // -1 because loop will increment
                     }
@@ -995,14 +1015,29 @@ if bot.can_move():
                 return commands;
             }
 
-            parseForLoop(lines, startIndex) {
+            parseVariableAssignment(line, variables) {
+                const commands = [];
+                const [varName, value] = line.split('=').map(s => s.trim());
+                
+                // Simple variable assignment tracking
+                if (varName && value) {
+                    variables[varName] = value;
+                    // No commands generated for variable assignments
+                }
+                
+                return { commands };
+            }
+
+            parseForLoop(lines, startIndex, variables) {
                 const commands = [];
                 const line = lines[startIndex];
-                const match = line.match(/for i in range\((\d+)\):/);
+                // Enhanced for loop parsing - supports different variable names
+                const match = line.match(/for\s+(\w+)\s+in\s+range\((\d+)\):/);
                 
                 if (match) {
-                    const iterations = parseInt(match[1]);
-                    const indentedCommands = this.parseIndentedBlock(lines, startIndex + 1);
+                    const varName = match[1];
+                    const iterations = parseInt(match[2]);
+                    const indentedCommands = this.parseIndentedBlock(lines, startIndex + 1, variables);
                     
                     for (let i = 0; i < iterations; i++) {
                         commands.push(...indentedCommands);
@@ -1012,23 +1047,50 @@ if bot.can_move():
                 return { commands, nextIndex: startIndex + 1 };
             }
 
-            parseIfStatement(lines, startIndex) {
+            parseIfStatement(lines, startIndex, variables) {
                 const commands = [];
                 let currentIndex = startIndex;
+                const conditionalBlocks = [];
                 
-                // Parse if condition
-                const ifLine = lines[currentIndex];
-                const ifCondition = ifLine.replace(/^if\s+/, '').replace(/:\s*$/, '');
-                
-                // Parse indented block
-                const ifCommands = this.parseIndentedBlock(lines, currentIndex + 1);
-                currentIndex += ifCommands.nextIndex;
+                // Parse if/elif/else blocks
+                while (currentIndex < lines.length) {
+                    const line = lines[currentIndex].trim();
+                    
+                    if (line.startsWith('if ')) {
+                        const condition = line.replace(/^if\s+/, '').replace(/:\s*$/, '');
+                        const block = this.parseIndentedBlock(lines, currentIndex + 1, variables);
+                        conditionalBlocks.push({
+                            type: 'if',
+                            condition: condition,
+                            commands: block.commands
+                        });
+                        currentIndex += block.nextIndex;
+                    } else if (line.startsWith('elif ')) {
+                        const condition = line.replace(/^elif\s+/, '').replace(/:\s*$/, '');
+                        const block = this.parseIndentedBlock(lines, currentIndex + 1, variables);
+                        conditionalBlocks.push({
+                            type: 'elif',
+                            condition: condition,
+                            commands: block.commands
+                        });
+                        currentIndex += block.nextIndex;
+                    } else if (line.startsWith('else:')) {
+                        const block = this.parseIndentedBlock(lines, currentIndex + 1, variables);
+                        conditionalBlocks.push({
+                            type: 'else',
+                            condition: null,
+                            commands: block.commands
+                        });
+                        currentIndex += block.nextIndex;
+                    } else {
+                        break;
+                    }
+                }
                 
                 // Create conditional command object
                 const conditionalCommand = {
                     type: 'conditional',
-                    condition: ifCondition,
-                    commands: ifCommands.commands
+                    blocks: conditionalBlocks
                 };
                 
                 commands.push(conditionalCommand);
@@ -1036,7 +1098,7 @@ if bot.can_move():
                 return { commands, nextIndex: currentIndex };
             }
 
-            parseIndentedBlock(lines, startIndex) {
+            parseIndentedBlock(lines, startIndex, variables = {}) {
                 const commands = [];
                 const baseIndentation = this.getIndentationLevel(lines[startIndex]);
                 let currentIndex = startIndex;
@@ -1056,13 +1118,23 @@ if bot.can_move():
                         break;
                     }
                     
-                    // Handle control structures within indented blocks
-                    if (trimmedLine.includes('for i in range(')) {
-                        const result = this.parseForLoop(lines, currentIndex);
+                    // Handle variable assignments
+                    if (trimmedLine.includes('=') && !trimmedLine.includes('==') && !trimmedLine.includes('!=')) {
+                        const result = this.parseVariableAssignment(trimmedLine, variables);
+                        if (result.commands.length > 0) {
+                            commands.push(...result.commands);
+                        }
+                        currentIndex++;
+                        continue;
+                    }
+                    
+                    // Handle control structures within indented blocks (nested)
+                    if (trimmedLine.includes('for ') && trimmedLine.includes(' in range(')) {
+                        const result = this.parseForLoop(lines, currentIndex, variables);
                         commands.push(...result.commands);
                         currentIndex = result.nextIndex;
                     } else if (trimmedLine.startsWith('if ')) {
-                        const result = this.parseIfStatement(lines, currentIndex);
+                        const result = this.parseIfStatement(lines, currentIndex, variables);
                         commands.push(...result.commands);
                         currentIndex = result.nextIndex;
                     } else if (trimmedLine.includes('bot.move_forward()')) {
@@ -1178,14 +1250,31 @@ if bot.can_move():
                 }
                 
                 this.gameBoard.checkTileEffects();
+                this.updateRobotInfo();
             }
 
             async executeConditional(conditionalCommand) {
-                const condition = conditionalCommand.condition;
+                const { blocks } = conditionalCommand;
                 
-                if (this.evaluateCondition(condition)) {
-                    for (const cmd of conditionalCommand.commands) {
-                        await this.executeCommand(cmd);
+                // Evaluate conditions in order and execute the first true branch
+                for (const block of blocks) {
+                    if (block.type === 'else') {
+                        // Execute else block
+                        for (const cmd of block.commands) {
+                            await this.executeCommand(cmd);
+                        }
+                        return;
+                    } else {
+                        // Evaluate the condition
+                        const conditionResult = this.evaluateCondition(block.condition);
+                        
+                        if (conditionResult) {
+                            // Execute the commands in this block
+                            for (const cmd of block.commands) {
+                                await this.executeCommand(cmd);
+                            }
+                            return;
+                        }
                     }
                 }
             }
@@ -1294,13 +1383,7 @@ if bot.can_move():
             }
 
             updateProgress() {
-                const progressFill = document.getElementById('progressFill');
                 const commandsUsedEl = document.getElementById('commandsUsedDisplay');
-                
-                if (progressFill) {
-                    const progress = Math.min((this.commandIndex / this.commands.length) * 100, 100);
-                    progressFill.style.width = `${progress}%`;
-                }
                 
                 if (commandsUsedEl) {
                     commandsUsedEl.textContent = this.commandsUsed;
@@ -1432,10 +1515,19 @@ for i in range(20):
                 this.gridSize = this.boardData.gridSize;
                 this.cellSize = Math.floor(canvas.width / this.gridSize);
                 
+                // Convert lowercase direction to capitalized format
+                const directionMap = {
+                    'north': 'North',
+                    'east': 'East', 
+                    'south': 'South',
+                    'west': 'West'
+                };
+                const robotDirection = this.currentLevel?.robotOrientation || 'east';
+                
                 this.robot = {
                     x: 0,
                     y: 0,
-                    direction: 'East',
+                    direction: directionMap[robotDirection] || 'East',
                     keys: [],
                     move_forward: () => this.moveRobot('forward'),
                     move_backward: () => this.moveRobot('backward'),
@@ -1535,16 +1627,55 @@ for i in range(20):
             drawRobot() {
                 const x = this.robot.x * this.cellSize;
                 const y = this.robot.y * this.cellSize;
+                const centerX = x + this.cellSize / 2;
+                const centerY = y + this.cellSize / 2;
                 
+                // Save canvas state for rotation
+                this.ctx.save();
+                
+                // Move to robot center and rotate based on direction
+                this.ctx.translate(centerX, centerY);
+                
+                // Calculate rotation angle based on direction
+                let rotationAngle = 0;
+                switch (this.robot.direction) {
+                    case 'North': rotationAngle = -Math.PI / 2; break; // -90 degrees
+                    case 'north': rotationAngle = -Math.PI / 2; break; // -90 degrees
+                    case 'East': rotationAngle = 0; break; // 0 degrees
+                    case 'east': rotationAngle = 0; break; // 0 degrees
+                    case 'South': rotationAngle = Math.PI / 2; break; // 90 degrees
+                    case 'south': rotationAngle = Math.PI / 2; break; // 90 degrees
+                    case 'West': rotationAngle = Math.PI; break; // 180 degrees
+                    case 'west': rotationAngle = Math.PI; break; // 180 degrees
+                }
+                
+                this.ctx.rotate(rotationAngle);
+                
+                // Draw the arrow robot
+                this.drawArrowRobot();
+                
+                // Restore canvas state
+                this.ctx.restore();
+            }
+            
+            drawArrowRobot() {
+                const size = Math.min(this.cellSize * 0.5, 20);
+                
+                // Set arrow color
                 this.ctx.fillStyle = '#FF6B6B';
-                this.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+                this.ctx.strokeStyle = '#CC5555';
+                this.ctx.lineWidth = 2;
                 
-                // Draw direction indicator
-                this.ctx.fillStyle = '#000';
-                this.ctx.font = '16px Arial';
-                this.ctx.textAlign = 'center';
-                const directionSymbols = { 'North': '↑', 'South': '↓', 'East': '→', 'West': '←' };
-                this.ctx.fillText(directionSymbols[this.robot.direction], x + this.cellSize / 2, y + this.cellSize / 2 + 5);
+                // Draw simple arrow pointing up (will be rotated)
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, -size * 0.4); // Arrow tip
+                this.ctx.lineTo(-size * 0.2, size * 0.2); // Left side
+                this.ctx.lineTo(-size * 0.1, size * 0.1); // Left notch
+                this.ctx.lineTo(size * 0.1, size * 0.1); // Right notch
+                this.ctx.lineTo(size * 0.2, size * 0.2); // Right side
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
             }
 
             getCellColor(type) {
@@ -1684,10 +1815,20 @@ for i in range(20):
             }
 
             resetRobot() {
+                // Convert lowercase direction to capitalized format
+                const directionMap = {
+                    'north': 'North',
+                    'east': 'East', 
+                    'south': 'South',
+                    'west': 'West'
+                };
+                const robotDirection = this.currentLevel?.robotOrientation || 'east';
+                
                 this.robot.x = 0;
                 this.robot.y = 0;
-                this.robot.direction = 'East';
+                this.robot.direction = directionMap[robotDirection] || 'East';
                 this.robot.keys = [];
+                this.findRobotStartPosition();
                 this.drawBoard();
             }
         }
