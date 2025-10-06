@@ -658,19 +658,9 @@ for step in range(steps):
         </div>
     </div>
 
-    <!-- Completion Message Modal -->
-    <div class="completion-message" id="completionMessage">
-        <div class="completion-stars" id="completionStars">⭐</div>
-        <div class="completion-text" id="completionText">Level Completed!</div>
-        <div class="completion-details" id="completionDetails"></div>
-        <div class="control-group" style="margin-top: 1rem;">
-            <button class="btn btn-primary" id="nextLevelBtn">Next Level</button>
-            <button class="btn btn-secondary" id="retryBtn">Retry</button>
-            <button class="btn btn-secondary" id="closeCompletionBtn">Close</button>
-        </div>
-    </div>
 
     <script src="level-manager.js"></script>
+    <script src="python-interpreter.js"></script>
     <script>
         // Bootstrap LevelManager
         window.LevelManager = window.LevelManager || new LevelManager();
@@ -926,10 +916,6 @@ for step in range(steps):
             }
 
             setupGameControls() {
-                document.getElementById('playBtn').addEventListener('click', () => this.playGame());
-                document.getElementById('pauseBtn').addEventListener('click', () => this.pauseGame());
-                document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
-                document.getElementById('stopBtn').addEventListener('click', () => this.stopGame());
             }
 
             initializeGame() {
@@ -957,8 +943,6 @@ for step in range(steps):
                 
                 this.gameBoard = new GameBoard(canvas, boardData);
                 this.robot = this.gameBoard.robot;
-                this.commands = this.parseCommands(this.currentLevel.startingCode || '');
-                this.commandIndex = 0;
                 this.commandsUsed = 0;
                 this.isRunning = false;
                 
@@ -966,241 +950,12 @@ for step in range(steps):
                 this.updateProgress();
             }
 
-            parseCommands(code) {
-                const commands = [];
-                const lines = code.split('\n');
-                const variables = {}; // Track variables
 
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    const trimmedLine = line.trim();
 
-                    if (!trimmedLine || trimmedLine.startsWith('#')) continue;
 
-                    // Handle variable assignments
-                    if (trimmedLine.includes('=') && !trimmedLine.includes('==') && !trimmedLine.includes('!=')) {
-                        const result = this.parseVariableAssignment(trimmedLine, variables);
-                        if (result.commands.length > 0) {
-                            commands.push(...result.commands);
-                        }
-                        continue;
-                    }
 
-                    // Handle control structures FIRST (if, for loops)
-                    if (trimmedLine.includes('for ') && trimmedLine.includes(' in range(')) {
-                        const result = this.parseForLoop(lines, i, variables);
-                        commands.push(...result.commands);
-                        i = result.nextIndex - 1; // -1 because loop will increment
-                    }
-                    // Handle if statements with proper conditional evaluation
-                    else if (trimmedLine.startsWith('if ')) {
-                        const result = this.parseIfStatement(lines, i, variables);
-                        commands.push(...result.commands);
-                        i = result.nextIndex - 1; // -1 because loop will increment
-                    }
-                    // Handle simple commands AFTER control structures
-                    else if (trimmedLine.includes('bot.move_forward()')) {
-                        commands.push('move_forward');
-                    } else if (trimmedLine.includes('bot.move_backward()')) {
-                        commands.push('move_backward');
-                    } else if (trimmedLine.includes('bot.turn_right()')) {
-                        commands.push('turn_right');
-                    } else if (trimmedLine.includes('bot.turn_left()')) {
-                        commands.push('turn_left');
-                    } else if (trimmedLine.includes('bot.can_move()')) {
-                        commands.push('can_move');
-                    }
-                }
 
-                return commands;
-            }
 
-            parseVariableAssignment(line, variables) {
-                const commands = [];
-                const [varName, value] = line.split('=').map(s => s.trim());
-                
-                // Simple variable assignment tracking
-                if (varName && value) {
-                    variables[varName] = value;
-                    // No commands generated for variable assignments
-                }
-                
-                return { commands };
-            }
-
-            parseForLoop(lines, startIndex, variables) {
-                const commands = [];
-                const line = lines[startIndex];
-                // Enhanced for loop parsing - supports different variable names
-                const match = line.match(/for\s+(\w+)\s+in\s+range\((\d+)\):/);
-                
-                if (match) {
-                    const varName = match[1];
-                    const iterations = parseInt(match[2]);
-                    const indentedCommands = this.parseIndentedBlock(lines, startIndex + 1, variables);
-                    
-                    for (let i = 0; i < iterations; i++) {
-                        commands.push(...indentedCommands);
-                    }
-                }
-                
-                return { commands, nextIndex: startIndex + 1 };
-            }
-
-            parseIfStatement(lines, startIndex, variables) {
-                const commands = [];
-                let currentIndex = startIndex;
-                const conditionalBlocks = [];
-                
-                // Parse if/elif/else blocks
-                while (currentIndex < lines.length) {
-                    const line = lines[currentIndex].trim();
-                    
-                    if (line.startsWith('if ')) {
-                        const condition = line.replace(/^if\s+/, '').replace(/:\s*$/, '');
-                        const block = this.parseIndentedBlock(lines, currentIndex + 1, variables);
-                        conditionalBlocks.push({
-                            type: 'if',
-                            condition: condition,
-                            commands: block.commands
-                        });
-                        currentIndex += block.nextIndex;
-                    } else if (line.startsWith('elif ')) {
-                        const condition = line.replace(/^elif\s+/, '').replace(/:\s*$/, '');
-                        const block = this.parseIndentedBlock(lines, currentIndex + 1, variables);
-                        conditionalBlocks.push({
-                            type: 'elif',
-                            condition: condition,
-                            commands: block.commands
-                        });
-                        currentIndex += block.nextIndex;
-                    } else if (line.startsWith('else:')) {
-                        const block = this.parseIndentedBlock(lines, currentIndex + 1, variables);
-                        conditionalBlocks.push({
-                            type: 'else',
-                            condition: null,
-                            commands: block.commands
-                        });
-                        currentIndex += block.nextIndex;
-                    } else {
-                        break;
-                    }
-                }
-                
-                // Create conditional command object
-                const conditionalCommand = {
-                    type: 'conditional',
-                    blocks: conditionalBlocks
-                };
-                
-                commands.push(conditionalCommand);
-                
-                return { commands, nextIndex: currentIndex };
-            }
-
-            parseIndentedBlock(lines, startIndex, variables = {}) {
-                const commands = [];
-                const baseIndentation = this.getIndentationLevel(lines[startIndex]);
-                let currentIndex = startIndex;
-                
-                while (currentIndex < lines.length) {
-                    const line = lines[currentIndex];
-                    const trimmedLine = line.trim();
-                    
-                    if (!trimmedLine || trimmedLine.startsWith('#')) {
-                        currentIndex++;
-                        continue;
-                    }
-                    
-                    const lineIndentation = this.getIndentationLevel(line);
-                    
-                    if (lineIndentation <= baseIndentation && currentIndex > startIndex) {
-                        break;
-                    }
-                    
-                    // Handle variable assignments
-                    if (trimmedLine.includes('=') && !trimmedLine.includes('==') && !trimmedLine.includes('!=')) {
-                        const result = this.parseVariableAssignment(trimmedLine, variables);
-                        if (result.commands.length > 0) {
-                            commands.push(...result.commands);
-                        }
-                        currentIndex++;
-                        continue;
-                    }
-                    
-                    // Handle control structures within indented blocks (nested)
-                    if (trimmedLine.includes('for ') && trimmedLine.includes(' in range(')) {
-                        const result = this.parseForLoop(lines, currentIndex, variables);
-                        commands.push(...result.commands);
-                        currentIndex = result.nextIndex;
-                    } else if (trimmedLine.startsWith('if ')) {
-                        const result = this.parseIfStatement(lines, currentIndex, variables);
-                        commands.push(...result.commands);
-                        currentIndex = result.nextIndex;
-                    } else if (trimmedLine.includes('bot.move_forward()')) {
-                        commands.push('move_forward');
-                        currentIndex++;
-                    } else if (trimmedLine.includes('bot.move_backward()')) {
-                        commands.push('move_backward');
-                        currentIndex++;
-                    } else if (trimmedLine.includes('bot.turn_right()')) {
-                        commands.push('turn_right');
-                        currentIndex++;
-                    } else if (trimmedLine.includes('bot.turn_left()')) {
-                        commands.push('turn_left');
-                        currentIndex++;
-                    } else if (trimmedLine.includes('bot.can_move()')) {
-                        commands.push('can_move');
-                        currentIndex++;
-                    } else {
-                        currentIndex++;
-                    }
-                }
-                
-                return { commands, nextIndex: currentIndex };
-            }
-
-            getIndentationLevel(line) {
-                return line.length - line.trimStart().length;
-            }
-
-            async playGame() {
-                if (this.isRunning) return;
-                
-                this.isRunning = true;
-                document.getElementById('playBtn').disabled = true;
-                document.getElementById('pauseBtn').disabled = false;
-                document.getElementById('stopBtn').disabled = false;
-                
-                while (this.commandIndex < this.commands.length && this.isRunning) {
-                    const command = this.commands[this.commandIndex];
-                    await this.executeCommand(command);
-                    this.commandIndex++;
-                    this.commandsUsed++;
-                    
-                    this.updateRobotInfo();
-                    this.updateProgress();
-                    
-                    // Check for level completion
-                    if (this.checkLevelCompletion()) {
-                        this.completeLevel();
-                        this.updateCodeStatus(`Level completed in ${this.commandsUsed} commands!`);
-                        break;
-                    }
-                    
-                    // Small delay for visualization
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-                
-                if (this.commandIndex >= this.commands.length && !this.checkLevelCompletion()) {
-                    this.updateCodeStatus(`Code finished in ${this.commandsUsed} commands (not completed)`);
-                }
-                
-                this.isRunning = false;
-                document.getElementById('playBtn').disabled = false;
-                document.getElementById('pauseBtn').disabled = true;
-                document.getElementById('stopBtn').disabled = true;
-            }
 
             pauseGame() {
                 this.isRunning = false;
@@ -1208,94 +963,14 @@ for step in range(steps):
                 document.getElementById('pauseBtn').disabled = true;
             }
 
-            stopGame() {
-                this.isRunning = false;
-                this.commandIndex = 0;
-                this.commandsUsed = 0;
-                this.initializeGame();
-                document.getElementById('playBtn').disabled = false;
-                document.getElementById('pauseBtn').disabled = true;
-                document.getElementById('stopBtn').disabled = true;
-            }
 
             resetGame() {
-                this.stopGame();
+                this.isRunning = false;
                 this.initializeGame();
             }
 
-            async executeCommand(command) {
-                // Handle conditional commands
-                if (typeof command === 'object' && command.type === 'conditional') {
-                    await this.executeConditional(command);
-                    return;
-                }
 
-                // Handle regular commands
-                switch (command) {
-                    case 'move_forward':
-                        this.robot.move_forward();
-                        break;
-                    case 'move_backward':
-                        this.robot.move_backward();
-                        break;
-                    case 'turn_right':
-                        this.robot.turn_right();
-                        break;
-                    case 'turn_left':
-                        this.robot.turn_left();
-                        break;
-                    case 'can_move':
-                        this.robot.can_move();
-                        break;
-                }
-                
-                this.gameBoard.checkTileEffects();
-                this.updateRobotInfo();
-            }
 
-            async executeConditional(conditionalCommand) {
-                const { blocks } = conditionalCommand;
-                
-                // Evaluate conditions in order and execute the first true branch
-                for (const block of blocks) {
-                    if (block.type === 'else') {
-                        // Execute else block
-                        for (const cmd of block.commands) {
-                            await this.executeCommand(cmd);
-                        }
-                        return;
-                    } else {
-                        // Evaluate the condition
-                        const conditionResult = this.evaluateCondition(block.condition);
-                        
-                        if (conditionResult) {
-                            // Execute the commands in this block
-                            for (const cmd of block.commands) {
-                                await this.executeCommand(cmd);
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-
-            evaluateCondition(condition) {
-                try {
-                    // Replace bot properties with actual values
-                    let processedCondition = condition
-                        .replace(/bot\.x/g, this.robot.x)
-                        .replace(/bot\.y/g, this.robot.y)
-                        .replace(/bot\.direction/g, `"${this.robot.direction}"`)
-                        .replace(/bot\.can_move\(\)/g, this.robot.can_move())
-                        .replace(/bot\.keys/g, JSON.stringify(this.robot.keys));
-                    
-                    // Evaluate the condition
-                    return eval(processedCondition);
-                } catch (error) {
-                    console.error('Error evaluating condition:', error);
-                    return false;
-                }
-            }
 
             checkLevelCompletion() {
                 const cell = this.gameBoard.board[this.robot.y] && this.gameBoard.board[this.robot.y][this.robot.x];
@@ -1401,7 +1076,7 @@ for step in range(steps):
                 }
             }
 
-            runCode() {
+            async runCode() {
                 if (this.isRunning) {
                     this.updateCodeStatus('Code is already running!');
                     return;
@@ -1413,19 +1088,45 @@ for step in range(steps):
                     return;
                 }
 
-                this.updateCodeStatus('Running code...');
-                
-                // Parse and set the new commands
-                this.commands = this.parseCommands(code);
-                this.commandIndex = 0;
-                this.commandsUsed = 0;
-                
-                // Start the game
-                this.playGame();
+                try {
+                    // Create interpreter instance
+                    this.interpreter = new PythonInterpreter(this);
+                    
+                    // Parse the code into AST
+                    const statements = this.interpreter.parse(code);
+                    
+                    if (statements.length === 0) {
+                        this.updateCodeStatus('No valid statements found in code.');
+                        return;
+                    }
+
+                    // Reset game state
+                    this.resetRobot();
+                    this.commandsUsed = 0;
+                    this.isRunning = true;
+                    this.gameCompleted = false;
+                    
+                    // Update status
+                    this.updateCodeStatus('Running code...');
+                    
+                    // Execute the code
+                    await this.interpreter.execute(statements);
+                    
+                    // Check for completion
+                    this.checkLevelCompletion();
+                    
+                    this.isRunning = false;
+                    this.updateCodeStatus('Code execution completed!');
+                    
+                } catch (error) {
+                    this.isRunning = false;
+                    this.updateCodeStatus(`Error: ${error.message}`);
+                    console.error('Code execution error:', error);
+                }
             }
 
             resetCode() {
-                this.stopGame();
+                this.isRunning = false;
                 this.loadStartingCode();
                 this.updateCodeStatus('Code reset to starting code');
             }
